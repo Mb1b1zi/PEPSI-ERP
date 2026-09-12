@@ -47,3 +47,10 @@ When adding a new module, follow this chain: define the type in `types/`, seed d
 - Do not bypass the service layer — no page, hook, or component may import from `mock/` directly.
 - Do not use default exports for components.
 - Do not edit files outside the module being worked on.
+
+## API modules
+- Documented backend contracts live in `docs/api/` (one file per module, owned by the backend team — never edit their content).
+- DTO types in `src/types/factory.ts` and `src/types/depot.ts` mirror the backend's field names and casing exactly, and are confined to the service layer.
+- Every service must map DTOs into frontend domain types before returning data — no DTO may cross into a hook, page, or component.
+- All paginated endpoints must be normalised to `Paged<T>` (`src/types/api.ts`) inside the service, using the adapters in `src/lib/pagination.ts` — no other pagination shape is allowed above the service layer.
+- A 2xx HTTP response never by itself means business success where the response body carries its own `status` field — read the body's status (see `assertBusinessStatus` in `src/lib/apiClient.ts`).
