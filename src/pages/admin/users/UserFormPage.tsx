@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from 'react-router-dom';
-import { userFormSchema, type UserFormValues } from '@/schemas/userSchema';
-import { userService } from '@/services/userService';
+import { userCreateSchema, userEditSchema, type UserCreateValues } from '@/schemas/userSchema';
+import { userService, type UpdateUserInput } from '@/services/userService';
 import { FormField } from '@/components/forms/FormField';
 import { ADMIN_PATHS } from '@/routes/paths';
+
+type UserFormValues = UserCreateValues;
 
 const inputClasses =
   'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
@@ -22,7 +24,7 @@ export function UserFormPage() {
     reset,
     formState: { errors },
   } = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(isEditMode ? userEditSchema : userCreateSchema) as Resolver<UserFormValues>,
     defaultValues: { name: '', email: '', contact: '', password: '' },
   });
 
@@ -40,7 +42,9 @@ export function UserFormPage() {
     setIsSubmitting(true);
     try {
       if (isEditMode && id) {
-        await userService.updateUser(id, values);
+        const { password, ...rest } = values;
+        const payload: UpdateUserInput = password ? { ...rest, password } : rest;
+        await userService.updateUser(id, payload);
       } else {
         await userService.createUser(values);
       }

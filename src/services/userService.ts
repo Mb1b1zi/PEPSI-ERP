@@ -1,9 +1,16 @@
 import type { User, UserRole } from '@/types/user';
-import type { UserFormValues } from '@/schemas/userSchema';
+import type { UserCreateValues } from '@/schemas/userSchema';
 import { mockUsers } from '@/mock/users.mock';
 
 function simulateDelay<T>(data: T, ms = 500): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
+}
+
+export interface UpdateUserInput {
+  name: string;
+  email: string;
+  contact: string;
+  password?: string;
 }
 
 let usersStore: User[] = [...mockUsers];
@@ -17,7 +24,7 @@ export const userService = {
     return simulateDelay(usersStore.find((u) => u.id === id));
   },
 
-  async createUser(data: UserFormValues): Promise<User> {
+  async createUser(data: UserCreateValues): Promise<User> {
     const newUser: User = {
       id: `u${Date.now()}`,
       name: data.name,
@@ -30,7 +37,7 @@ export const userService = {
     return simulateDelay(newUser);
   },
 
-  async updateUser(id: string, data: UserFormValues): Promise<User | undefined> {
+  async updateUser(id: string, data: UpdateUserInput): Promise<User | undefined> {
     usersStore = usersStore.map((u) =>
       u.id === id
         ? { ...u, name: data.name, email: data.email, contact: data.contact }
