@@ -7,7 +7,9 @@ import { UserFormPage } from '@/pages/admin/users/UserFormPage';
 import { UserViewPage } from '@/pages/admin/users/UserViewPage';
 import { RolesPage } from '@/pages/admin/roles/RolesPage';
 import { DepotsPage } from '@/pages/admin/depots/DepotsPage';
+import { DepotFormPage } from '@/pages/admin/depots/DepotFormPage';
 import { ProductsPage } from '@/pages/admin/products/ProductsPage';
+import { ProductFormPage } from '@/pages/admin/products/ProductFormPage';
 import { ProductionPage } from '@/pages/factory/ProductionPage';
 import { ProductionFormPage } from '@/pages/factory/ProductionFormPage';
 import { SuppliesPage } from '@/pages/factory/SuppliesPage';
@@ -36,7 +38,11 @@ export const router = createBrowserRouter([
       { path: '/admin/users/:id', element: <UserViewPage /> },
       { path: '/admin/users/:id/edit', element: <UserFormPage /> },
       { path: ADMIN_PATHS.depots.list, element: <DepotsPage /> },
+      { path: ADMIN_PATHS.depots.add, element: <DepotFormPage /> },
+      { path: '/admin/depots/:id/edit', element: <DepotFormPage /> },
       { path: ADMIN_PATHS.products.list, element: <ProductsPage /> },
+      { path: ADMIN_PATHS.products.add, element: <ProductFormPage /> },
+      { path: '/admin/products/:id/edit', element: <ProductFormPage /> },
       { path: FACTORY_PATHS.production.list, element: <ProductionPage /> },
       { path: FACTORY_PATHS.production.add, element: <ProductionFormPage /> },
       { path: '/factory/production/:id/edit', element: <ProductionFormPage /> },
