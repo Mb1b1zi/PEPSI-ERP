@@ -19,6 +19,18 @@ export interface ProductionRecordDto {
   created_date: string;
 }
 
+/**
+ * docs/api/factory.md does not give a request body example for PUT /factory/production/{id},
+ * only prose ("Update ... a production record. Current factory stock is adjusted by the
+ * quantity change."). Modelled on the create request since the fields being updated are the
+ * same ones supplied at creation. Confirm against the real API before relying on this shape.
+ */
+export interface UpdateProductionRequestDto {
+  product_id: number;
+  quantity_produced: number;
+  production_date?: string;
+}
+
 export interface FactoryCurrentStockDto {
   id: number;
   product_id: number;
@@ -45,4 +57,16 @@ export interface SupplyHistoryDto {
   status: SupplyStatus;
   rejection_reason: string | null;
   created_date: string;
+}
+
+/**
+ * docs/api/factory.md does not give a request body example for PUT /factory/supplies/{id},
+ * only prose ("A rejected supply must include rejection_reason. Rejecting or deleting a
+ * pending supply releases its reserved amount back to factory stock."). Modelled as a
+ * decide-the-pending-supply action: set the final status, with a reason required when
+ * rejecting. Confirm against the real API before relying on this shape.
+ */
+export interface UpdateSupplyRequestDto {
+  status: SupplyStatus;
+  rejection_reason?: string;
 }

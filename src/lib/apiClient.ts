@@ -49,6 +49,19 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
  * response and returns it normally. Callers must run the body through this helper (or read
  * `body.status` themselves) before treating a 2xx response as a business success.
  */
+/** Narrows an unknown catch value to the ApiError shape thrown by apiRequest above. */
+function isApiError(err: unknown): err is ApiError {
+  return typeof err === 'object' && err !== null && 'status' in err && 'message' in err;
+}
+
+/**
+ * Surfaces the backend's own error message (e.g. a 409 "insufficient stock") when available,
+ * falling back to a generic message for network failures or anything not shaped like ApiError.
+ */
+export function getApiErrorMessage(err: unknown, fallback = 'Something went wrong.'): string {
+  return isApiError(err) ? err.message : fallback;
+}
+
 export function assertBusinessStatus<T extends { status: string }>(
   body: T,
   failureStatus: T['status'],
