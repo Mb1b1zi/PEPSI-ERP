@@ -1,5 +1,6 @@
 import { apiRequest } from '@/lib/apiClient';
 import { pagedFromFactoryList } from '@/lib/pagination';
+import { buildQuery } from '@/lib/queryString';
 import type { Paged } from '@/types/api';
 import type {
   ProductionRecordDto,
@@ -65,17 +66,6 @@ function toStockItem(dto: FactoryCurrentStockDto): FactoryStockItem {
     availableQuantity: dto.available_quantity,
     updatedDate: dto.updated_date,
   };
-}
-
-function buildQuery(params: Record<string, string | number | undefined>): string {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined) {
-      search.set(key, String(value));
-    }
-  }
-  const query = search.toString();
-  return query ? `?${query}` : '';
 }
 
 export const factoryService = {

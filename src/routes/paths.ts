@@ -24,4 +24,16 @@ export const ADMIN_PATHS = {
     },
     stock: '/admin/factory/stock',
   },
+  depotOps: {
+    restock: {
+      list: '/admin/depot-operations/restock',
+      decide: '/admin/depot-operations/restock/decide',
+    },
+    stock: '/admin/depot-operations/stock',
+    sales: {
+      list: '/admin/depot-operations/sales',
+      add: '/admin/depot-operations/sales/add',
+    },
+    currentSales: '/admin/depot-operations/sales-current',
+  },
 } as const;
