@@ -1,32 +1,49 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSalesHistory } from '@/hooks/useSalesHistory';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useSalesHistory, type SalesFilters } from '@/hooks/useSalesHistory';
 import { depotService } from '@/services/depotService';
 import { getApiErrorMessage } from '@/lib/apiClient';
+import { useToast } from '@/hooks/useToast';
 import { Table, type Column } from '@/components/tables/Table';
+import { Pagination } from '@/components/tables/Pagination';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { ADMIN_PATHS } from '@/routes/paths';
+import { DEPOT_PATHS } from '@/routes/paths';
 import type { SaleRecord } from '@/types/sale';
 
+const inputClasses =
+  'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
+
 export function SalesListPage() {
-  const { sales, isLoading, error, page, totalPages, hasNextPage, hasPrevPage, nextPage, prevPage, refetch } =
-    useSalesHistory();
+  const [productNameInput, setProductNameInput] = useState('');
+  const [dateFromInput, setDateFromInput] = useState('');
+  const [dateToInput, setDateToInput] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<SalesFilters>({});
+  const { items, page, totalPages, total, isLoading, error, setPage, refetch } = useSalesHistory(appliedFilters);
   const navigate = useNavigate();
+  const toast = useToast();
   const [saleToDelete, setSaleToDelete] = useState<SaleRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  function handleApplyFilters() {
+    setAppliedFilters({
+      productName: productNameInput.trim() || undefined,
+      dateFrom: dateFromInput || undefined,
+      dateTo: dateToInput || undefined,
+    });
+  }
 
   async function handleConfirmDelete() {
     if (!saleToDelete) return;
     setIsDeleting(true);
-    setDeleteError(null);
     try {
       await depotService.deleteSale(saleToDelete.id);
+      toast.success('Sale deleted.');
       await refetch();
       setSaleToDelete(null);
     } catch (err) {
-      setDeleteError(getApiErrorMessage(err, 'Failed to delete sale.'));
+      const message = err instanceof Error ? err.message : getApiErrorMessage(err, 'Failed to delete sale.');
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
@@ -38,7 +55,6 @@ export function SalesListPage() {
     { header: 'Quantity', render: (s) => s.quantityValue },
     { header: 'Sold', render: (s) => s.quantitySold },
     { header: 'Amount', render: (s) => s.soldAmount },
-    { header: 'Sold By', render: (s) => s.soldById },
     { header: 'Date', render: (s) => s.saleDate },
     { header: 'Time', render: (s) => s.saleTime },
     {
@@ -47,7 +63,7 @@ export function SalesListPage() {
         <div className="flex items-center gap-3 text-gray-400">
           <button
             title="Edit"
-            onClick={() => navigate(`${ADMIN_PATHS.depotOps.sales.list}/${s.id}/edit`)}
+            onClick={() => navigate(`${DEPOT_PATHS.sales.list}/${s.id}/edit`)}
             className="hover:text-brand transition-colors"
           >
             <Pencil size={16} />
@@ -68,18 +84,33 @@ export function SalesListPage() {
           <p className="text-gray-500 mt-1">Sales recorded at each depot.</p>
         </div>
         <Link
-          to={ADMIN_PATHS.depotOps.sales.add}
+          to={DEPOT_PATHS.sales.add}
           className="flex items-center gap-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
         >
           <Plus size={16} /> Add Sale
         </Link>
       </div>
 
+      <div className="mt-6 flex items-end gap-3 flex-wrap">
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1.5">Product Name</label>
+          <input value={productNameInput} onChange={(e) => setProductNameInput(e.target.value)} className={inputClasses} placeholder="e.g. Pepsi" />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1.5">From</label>
+          <input value={dateFromInput} onChange={(e) => setDateFromInput(e.target.value)} type="date" className={inputClasses} />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1.5">To</label>
+          <input value={dateToInput} onChange={(e) => setDateToInput(e.target.value)} type="date" className={inputClasses} />
+        </div>
+        <button onClick={handleApplyFilters} className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md border border-gray-300">
+          Apply
+        </button>
+      </div>
+
       {error && (
         <div className="mt-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">{error}</div>
-      )}
-      {deleteError && (
-        <div className="mt-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">{deleteError}</div>
       )}
 
       <div className="mt-6">
@@ -90,28 +121,12 @@ export function SalesListPage() {
             ))}
           </div>
         ) : (
-          <Table columns={columns} data={sales} getRowKey={(s) => String(s.id)} />
+          <Table columns={columns} data={items} getRowKey={(s) => String(s.id)} />
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-4">
-        <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={prevPage}
-            disabled={!hasPrevPage || isLoading}
-            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-md border border-gray-300"
-          >
-            <ChevronLeft size={14} /> Prev
-          </button>
-          <button
-            onClick={nextPage}
-            disabled={!hasNextPage || isLoading}
-            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-md border border-gray-300"
-          >
-            Next <ChevronRight size={14} />
-          </button>
-        </div>
+      <div className="mt-4">
+        <Pagination currentPage={page} pageSize={10} totalPages={totalPages} totalItems={total} onPageChange={setPage} disabled={isLoading} />
       </div>
 
       <ConfirmDialog

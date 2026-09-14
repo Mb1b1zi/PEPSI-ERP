@@ -10,17 +10,21 @@ import {
 } from '@/schemas/saleSchema';
 import { depotService } from '@/services/depotService';
 import { getApiErrorMessage } from '@/lib/apiClient';
+import { useCatalog } from '@/hooks/useCatalog';
+import { useToast } from '@/hooks/useToast';
 import { FormField } from '@/components/forms/FormField';
-import { ADMIN_PATHS } from '@/routes/paths';
+import { DEPOT_PATHS } from '@/routes/paths';
 import type { SaleRecord } from '@/types/sale';
 
 const inputClasses =
   'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
+const selectClasses = inputClasses;
 
 function CreateSaleForm() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const { depots, products, quantities, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -29,12 +33,13 @@ function CreateSaleForm() {
 
   async function onSubmit(values: SaleCreateValues) {
     setIsSubmitting(true);
-    setSubmitError(null);
     try {
       await depotService.createSale(values);
-      navigate(ADMIN_PATHS.depotOps.sales.list);
+      toast.success('Sale recorded.');
+      navigate(DEPOT_PATHS.sales.list);
     } catch (err) {
-      setSubmitError(getApiErrorMessage(err, 'Failed to record sale.'));
+      const message = err instanceof Error ? err.message : getApiErrorMessage(err, 'Failed to record sale.');
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -42,40 +47,74 @@ function CreateSaleForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="mt-6 bg-white border border-gray-200 rounded-lg p-6 flex flex-col gap-5">
-      <FormField label="Depot ID" error={errors.depotId?.message} required>
-        <input {...register('depotId')} type="number" min={1} className={inputClasses} placeholder="e.g. 3" />
+      <FormField label="Depot" error={errors.depotId?.message} required>
+        {isCatalogLoading ? (
+          <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
+        ) : catalogError ? (
+          <p className="text-sm text-red-600">Failed to load depots: {catalogError}</p>
+        ) : (
+          <select {...register('depotId')} className={selectClasses} defaultValue="">
+            <option value="" disabled>Select a depot…</option>
+            {depots.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        )}
       </FormField>
-      <FormField label="Product ID" error={errors.productId?.message} required>
-        <input {...register('productId')} type="number" min={1} className={inputClasses} placeholder="e.g. 4" />
+
+      <FormField label="Product" error={errors.productId?.message} required>
+        {isCatalogLoading ? (
+          <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
+        ) : catalogError ? (
+          <p className="text-sm text-red-600">Failed to load products: {catalogError}</p>
+        ) : (
+          <select {...register('productId')} className={selectClasses} defaultValue="">
+            <option value="" disabled>Select a product…</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        )}
       </FormField>
-      <FormField label="Quantity ID" error={errors.quantityId?.message} required>
-        <input {...register('quantityId')} type="number" min={1} className={inputClasses} placeholder="e.g. 5" />
+
+      <FormField label="Quantity" error={errors.quantityId?.message} required>
+        {isCatalogLoading ? (
+          <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
+        ) : catalogError ? (
+          <p className="text-sm text-red-600">Failed to load quantities: {catalogError}</p>
+        ) : (
+          <select {...register('quantityId')} className={selectClasses} defaultValue="">
+            <option value="" disabled>Select a quantity…</option>
+            {quantities.map((q) => (
+              <option key={q.id} value={q.id}>{q.value}</option>
+            ))}
+          </select>
+        )}
       </FormField>
+
       <FormField label="Quantity Sold" error={errors.quantitySold?.message} required>
         <input {...register('quantitySold')} type="number" min={1} className={inputClasses} placeholder="e.g. 20" />
       </FormField>
+
       <FormField label="Sold By ID" error={errors.soldById?.message} required>
         <input {...register('soldById')} type="number" min={1} className={inputClasses} placeholder="e.g. 8" />
       </FormField>
+
       <FormField label="Amount Sold (optional — auto-priced if left blank)" error={errors.amountSold?.message}>
         <input {...register('amountSold')} type="number" min={0} step="0.01" className={inputClasses} />
       </FormField>
 
-      {submitError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">{submitError}</div>
-      )}
-
       <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isCatalogLoading}
           className="bg-brand hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
         >
           {isSubmitting ? 'Saving...' : 'Record Sale'}
         </button>
         <button
           type="button"
-          onClick={() => navigate(ADMIN_PATHS.depotOps.sales.list)}
+          onClick={() => navigate(DEPOT_PATHS.sales.list)}
           className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2"
         >
           Cancel
@@ -87,10 +126,10 @@ function CreateSaleForm() {
 
 function EditSaleForm({ id }: { id: string }) {
   const navigate = useNavigate();
+  const toast = useToast();
   const [sale, setSale] = useState<SaleRecord | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -111,12 +150,13 @@ function EditSaleForm({ id }: { id: string }) {
 
   async function onSubmit(values: SaleUpdateValues) {
     setIsSubmitting(true);
-    setSubmitError(null);
     try {
       await depotService.updateSale(Number(id), values);
-      navigate(ADMIN_PATHS.depotOps.sales.list);
+      toast.success('Sale updated.');
+      navigate(DEPOT_PATHS.sales.list);
     } catch (err) {
-      setSubmitError(getApiErrorMessage(err, 'Failed to update sale.'));
+      const message = err instanceof Error ? err.message : getApiErrorMessage(err, 'Failed to update sale.');
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -143,10 +183,6 @@ function EditSaleForm({ id }: { id: string }) {
           <input {...register('amountSold')} type="number" min={0} step="0.01" className={inputClasses} />
         </FormField>
 
-        {submitError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">{submitError}</div>
-        )}
-
         <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
           <button
             type="submit"
@@ -157,7 +193,7 @@ function EditSaleForm({ id }: { id: string }) {
           </button>
           <button
             type="button"
-            onClick={() => navigate(ADMIN_PATHS.depotOps.sales.list)}
+            onClick={() => navigate(DEPOT_PATHS.sales.list)}
             className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2"
           >
             Cancel

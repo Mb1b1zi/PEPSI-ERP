@@ -5,8 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { updateRestockSchema, type UpdateRestockValues } from '@/schemas/restockSchema';
 import { depotService } from '@/services/depotService';
 import { getApiErrorMessage } from '@/lib/apiClient';
+import { useToast } from '@/hooks/useToast';
 import { FormField } from '@/components/forms/FormField';
-import { ADMIN_PATHS } from '@/routes/paths';
+import { DEPOT_PATHS } from '@/routes/paths';
 import type { RestockEntry } from '@/types/restock';
 
 const inputClasses =
@@ -15,10 +16,10 @@ const inputClasses =
 export function RestockEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [entry, setEntry] = useState<RestockEntry | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -43,12 +44,13 @@ export function RestockEditPage() {
   async function onSubmit(values: UpdateRestockValues) {
     if (!id) return;
     setIsSubmitting(true);
-    setSubmitError(null);
     try {
       await depotService.updateRestock(Number(id), values);
-      navigate(ADMIN_PATHS.depotOps.restock.list);
+      toast.success('Restock entry updated.');
+      navigate(DEPOT_PATHS.restock.list);
     } catch (err) {
-      setSubmitError(getApiErrorMessage(err, 'Failed to update restock entry.'));
+      const message = err instanceof Error ? err.message : getApiErrorMessage(err, 'Failed to update restock entry.');
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -76,10 +78,6 @@ export function RestockEditPage() {
             <input {...register('quantityDelivered')} type="number" min={1} className={inputClasses} />
           </FormField>
 
-          {submitError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">{submitError}</div>
-          )}
-
           <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
             <button
               type="submit"
@@ -90,7 +88,7 @@ export function RestockEditPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate(ADMIN_PATHS.depotOps.restock.list)}
+              onClick={() => navigate(DEPOT_PATHS.restock.list)}
               className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2"
             >
               Cancel

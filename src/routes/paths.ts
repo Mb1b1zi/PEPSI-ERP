@@ -54,3 +54,17 @@ export const FACTORY_PATHS = {
   },
   stock: '/factory/stock',
 } as const;
+
+/** Same reasoning as FACTORY_PATHS — ADMIN_PATHS.depotOps above is now dead/unused. */
+export const DEPOT_PATHS = {
+  restock: {
+    list: '/depot/restock',
+    decide: '/depot/restock/decide',
+  },
+  stock: '/depot/stock',
+  sales: {
+    list: '/depot/sales',
+    add: '/depot/sales/add',
+  },
+  currentSales: '/depot/sales-current',
+} as const;

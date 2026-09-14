@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Warehouse, Package, ShieldCheck, Truck } from 'lucide-react';
+import { LayoutDashboard, Users, Warehouse, Package, ShieldCheck } from 'lucide-react';
 import { ADMIN_PATHS } from './paths';
 import type { NavItem } from '@/types/navigation';
 
@@ -35,18 +35,6 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: 'All Products', path: ADMIN_PATHS.products.list },
       { label: 'Add Product', path: ADMIN_PATHS.products.add },
-    ],
-  },
-  {
-    label: 'Depot Operations',
-    icon: <Truck size={18} />,
-    children: [
-      { label: 'Confirm/Reject Delivery', path: ADMIN_PATHS.depotOps.restock.decide },
-      { label: 'Restock History', path: ADMIN_PATHS.depotOps.restock.list },
-      { label: 'Depot Stock', path: ADMIN_PATHS.depotOps.stock },
-      { label: 'Add Sale', path: ADMIN_PATHS.depotOps.sales.add },
-      { label: 'Sales History', path: ADMIN_PATHS.depotOps.sales.list },
-      { label: "Today's Sales", path: ADMIN_PATHS.depotOps.currentSales },
     ],
   },
 ];

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useCurrentSales } from '@/hooks/useCurrentSales';
+import { useCatalog } from '@/hooks/useCatalog';
 import { Table, type Column } from '@/components/tables/Table';
 import type { CurrentSaleEntry } from '@/types/sale';
 
@@ -18,10 +19,11 @@ const columns: Column<CurrentSaleEntry>[] = [
 
 export function CurrentSalesPage() {
   const { sales, isLoading, error, applyFilter, refetch } = useCurrentSales();
+  const { depots, isLoading: isCatalogLoading } = useCatalog();
   const [depotIdInput, setDepotIdInput] = useState('');
 
   function handleApplyFilter() {
-    applyFilter(depotIdInput.trim() === '' ? undefined : Number(depotIdInput));
+    applyFilter(depotIdInput === '' ? undefined : Number(depotIdInput));
   }
 
   return (
@@ -42,15 +44,18 @@ export function CurrentSalesPage() {
 
       <div className="mt-6 flex items-end gap-3">
         <div>
-          <label className="text-sm font-medium text-gray-700 block mb-1.5">Depot ID</label>
-          <input
+          <label className="text-sm font-medium text-gray-700 block mb-1.5">Depot</label>
+          <select
             value={depotIdInput}
             onChange={(e) => setDepotIdInput(e.target.value)}
-            type="number"
-            min={1}
-            placeholder="Filter by depot ID"
+            disabled={isCatalogLoading}
             className={inputClasses}
-          />
+          >
+            <option value="">All depots</option>
+            {depots.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
         </div>
         <button
           onClick={handleApplyFilter}

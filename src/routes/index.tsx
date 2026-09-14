@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { ADMIN_PATHS, FACTORY_PATHS } from './paths';
+import { ADMIN_PATHS, FACTORY_PATHS, DEPOT_PATHS } from './paths';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DashboardPage } from '@/pages/admin/dashboard/DashboardPage';
 import { UsersListPage } from '@/pages/admin/users/UsersListPage';
@@ -13,13 +13,13 @@ import { ProductionFormPage } from '@/pages/factory/ProductionFormPage';
 import { SuppliesPage } from '@/pages/factory/SuppliesPage';
 import { SupplyFormPage } from '@/pages/factory/SupplyFormPage';
 import { FactoryStockPage } from '@/pages/factory/FactoryStockPage';
-import { RestockListPage } from '@/pages/admin/depotOps/RestockListPage';
-import { RestockDecidePage } from '@/pages/admin/depotOps/RestockDecidePage';
-import { RestockEditPage } from '@/pages/admin/depotOps/RestockEditPage';
-import { DepotStockPage } from '@/pages/admin/depotOps/DepotStockPage';
-import { SalesListPage } from '@/pages/admin/depotOps/SalesListPage';
-import { SaleFormPage } from '@/pages/admin/depotOps/SaleFormPage';
-import { CurrentSalesPage } from '@/pages/admin/depotOps/CurrentSalesPage';
+import { RestockListPage } from '@/pages/depot/RestockListPage';
+import { RestockDecidePage } from '@/pages/depot/RestockDecidePage';
+import { RestockEditPage } from '@/pages/depot/RestockEditPage';
+import { DepotStockPage } from '@/pages/depot/DepotStockPage';
+import { SalesListPage } from '@/pages/depot/SalesListPage';
+import { SaleFormPage } from '@/pages/depot/SaleFormPage';
+import { CurrentSalesPage } from '@/pages/depot/CurrentSalesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ErrorPage } from '@/pages/ErrorPage';
 
@@ -44,14 +44,14 @@ export const router = createBrowserRouter([
       { path: FACTORY_PATHS.supplies.add, element: <SupplyFormPage /> },
       { path: '/factory/supplies/:id/edit', element: <SupplyFormPage /> },
       { path: FACTORY_PATHS.stock, element: <FactoryStockPage /> },
-      { path: ADMIN_PATHS.depotOps.restock.list, element: <RestockListPage /> },
-      { path: ADMIN_PATHS.depotOps.restock.decide, element: <RestockDecidePage /> },
-      { path: '/admin/depot-operations/restock/:id/edit', element: <RestockEditPage /> },
-      { path: ADMIN_PATHS.depotOps.stock, element: <DepotStockPage /> },
-      { path: ADMIN_PATHS.depotOps.sales.list, element: <SalesListPage /> },
-      { path: ADMIN_PATHS.depotOps.sales.add, element: <SaleFormPage /> },
-      { path: '/admin/depot-operations/sales/:id/edit', element: <SaleFormPage /> },
-      { path: ADMIN_PATHS.depotOps.currentSales, element: <CurrentSalesPage /> },
+      { path: DEPOT_PATHS.restock.list, element: <RestockListPage /> },
+      { path: DEPOT_PATHS.restock.decide, element: <RestockDecidePage /> },
+      { path: '/depot/restock/:id/edit', element: <RestockEditPage /> },
+      { path: DEPOT_PATHS.stock, element: <DepotStockPage /> },
+      { path: DEPOT_PATHS.sales.list, element: <SalesListPage /> },
+      { path: DEPOT_PATHS.sales.add, element: <SaleFormPage /> },
+      { path: '/depot/sales/:id/edit', element: <SaleFormPage /> },
+      { path: DEPOT_PATHS.currentSales, element: <CurrentSalesPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
