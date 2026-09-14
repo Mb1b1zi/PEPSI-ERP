@@ -63,7 +63,7 @@ export interface CreateSaleRequestDto {
   product_id: number;
   quantity_id: number;
   quantity_sold: number;
-  sold_by_id: number;
+  sold_by_id?: number;
   amount_sold?: number;
 }
 
@@ -73,13 +73,9 @@ export interface UpdateSaleRequestDto {
 }
 
 /**
- * docs/api/depot.md does not give a complete JSON example for POST/GET /depot/sales
- * responses (only for the separate /depot/sales-current endpoint below). The fields here
- * are inferred from the request body, from the prose confirming `sale_date` and `sale_time`
- * are separate fields, from the response field being named `sold_amount` (see open question
- * #7 in docs/api/README.md), and from the name-enrichment pattern (`*_name`, `quantity_value`)
- * used consistently by every other list/detail response in this document. Confirm against
- * the real API before relying on this shape.
+ * Confirmed against docs/api/openapi.json's SaleResponse (docs/api/depot.md itself gives no
+ * complete JSON example for POST/GET /depot/sales responses) — the shape guessed here turned
+ * out correct, except `sold_by_id` is nullable, fixed below.
  */
 export interface SaleDto {
   id: number;
@@ -91,7 +87,7 @@ export interface SaleDto {
   quantity_value: string;
   quantity_sold: number;
   sold_amount: number;
-  sold_by_id: number;
+  sold_by_id: number | null;
   sale_date: string;
   sale_time: string;
 }

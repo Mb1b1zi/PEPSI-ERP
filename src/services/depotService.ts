@@ -390,7 +390,7 @@ export const depotService = {
         quantityValue: quantity?.value ?? `Quantity ${input.quantityId}`,
         quantitySold: input.quantitySold,
         soldAmount: input.amountSold ?? (mockUnitPrices[input.productId] ?? 0) * input.quantitySold,
-        soldById: input.soldById,
+        soldById: input.soldById ?? null,
         saleDate: now.toISOString().slice(0, 10),
         saleTime: now.toISOString().slice(11, 19),
       };

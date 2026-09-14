@@ -96,7 +96,7 @@ function CreateSaleForm() {
         <input {...register('quantitySold')} type="number" min={1} className={inputClasses} placeholder="e.g. 20" />
       </FormField>
 
-      <FormField label="Sold By ID" error={errors.soldById?.message} required>
+      <FormField label="Sold By ID (optional)" error={errors.soldById?.message}>
         <input {...register('soldById')} type="number" min={1} className={inputClasses} placeholder="e.g. 8" />
       </FormField>
 

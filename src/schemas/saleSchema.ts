@@ -10,12 +10,18 @@ const optionalPositiveNumber = () =>
     positiveNumber().optional(),
   );
 
+const optionalPositiveInt = () =>
+  z.preprocess(
+    (val) => (val === '' || val === undefined || val === null ? undefined : val),
+    positiveInt().optional(),
+  );
+
 export const saleCreateSchema = z.object({
   depotId: positiveInt(),
   productId: positiveInt(),
   quantityId: positiveInt(),
   quantitySold: positiveInt(),
-  soldById: positiveInt(),
+  soldById: optionalPositiveInt(),
   amountSold: optionalPositiveNumber(),
 });
 

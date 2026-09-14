@@ -2,26 +2,21 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
 import { userService } from '@/services/userService';
-import { roleService } from '@/services/roleService';
-import { Badge } from '@/components/badges/Badge';
+import { useRoles } from '@/hooks/useRoles';
+import { useDepotLocations } from '@/hooks/useDepotLocations';
 import { ADMIN_PATHS } from '@/routes/paths';
 import type { User } from '@/types/user';
-import type { Permission } from '@/types/user';
 
 export function UserViewPage() {
   const { id } = useParams();
   const [user, setUser] = useState<User | null | undefined>(undefined);
-  const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
+  const { roles } = useRoles();
+  const { depots } = useDepotLocations();
 
   useEffect(() => {
     if (!id) return;
-    userService.getUserById(id).then((foundUser) => {
+    userService.getUserById(Number(id)).then((foundUser) => {
       setUser(foundUser ?? null);
-      if (foundUser) {
-        roleService.getRoleByName(foundUser.role).then((mapping) => {
-          setRolePermissions(mapping?.permissions ?? []);
-        });
-      }
     });
   }, [id]);
 
@@ -32,6 +27,9 @@ export function UserViewPage() {
   if (!user) {
     return <div className="p-6 text-gray-500 text-sm">User not found.</div>;
   }
+
+  const roleName = roles.find((r) => r.id === user.roleId)?.name ?? '—';
+  const depotName = depots.find((d) => d.id === user.depotId)?.name ?? '—';
 
   return (
     <div className="p-6 max-w-2xl">
@@ -46,18 +44,13 @@ export function UserViewPage() {
       </div>
 
       <div className="mt-6 bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
-        <DetailRow label="Email" value={user.email} />
+        <DetailRow label="Email" value={user.email ?? '—'} />
+        <DetailRow label="Gender" value={user.gender} />
         <DetailRow label="Contact" value={user.contact} />
-        <DetailRow label="Role" value={<Badge label={user.role} color={user.role === 'Unassigned' ? 'gray' : 'blue'} />} />
-        <DetailRow label="Status" value={<Badge label={user.status} color={user.status === 'active' ? 'green' : 'red'} />} />
-        <DetailRow
-          label="Permissions (via role)"
-          value={
-            rolePermissions.length
-              ? rolePermissions.map((p) => p.replace('_', ' ')).join(', ')
-              : 'None — role has no permissions assigned'
-          }
-        />
+        <DetailRow label="Salary" value={user.salary !== null ? user.salary.toLocaleString() : '—'} />
+        <DetailRow label="Role" value={roleName} />
+        <DetailRow label="Depot" value={depotName} />
+        <DetailRow label="Created" value={new Date(user.createdAt).toLocaleString()} />
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export interface SaleRecord {
   quantityValue: string;
   quantitySold: number;
   soldAmount: number;
-  soldById: number;
+  soldById: number | null;
   saleDate: string;
   saleTime: string;
 }
@@ -18,7 +18,7 @@ export interface CreateSaleInput {
   productId: number;
   quantityId: number;
   quantitySold: number;
-  soldById: number;
+  soldById?: number;
   amountSold?: number;
 }
 

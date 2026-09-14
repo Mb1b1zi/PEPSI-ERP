@@ -1,20 +1,25 @@
 import { z } from 'zod';
 
-export const userCreateSchema = z.object({
+const optionalPositiveInt = () =>
+  z.preprocess(
+    (val) => (val === '' || val === undefined || val === null ? undefined : val),
+    z.coerce.number().int('Must be a whole number').positive('Must be a positive number').optional(),
+  );
+
+const optionalPositiveNumber = () =>
+  z.preprocess(
+    (val) => (val === '' || val === undefined || val === null ? undefined : val),
+    z.coerce.number().positive('Must be a positive number').optional(),
+  );
+
+export const userSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Enter a valid email address'),
+  email: z.union([z.literal(''), z.string().email('Enter a valid email address')]).optional(),
+  gender: z.enum(['Male', 'Female'], { message: 'Select a gender' }),
   contact: z.string().min(7, 'Enter a valid phone number'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  salary: optionalPositiveNumber(),
+  roleId: optionalPositiveInt(),
+  depotId: optionalPositiveInt(),
 });
 
-export const userEditSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Enter a valid email address'),
-  contact: z.string().min(7, 'Enter a valid phone number'),
-  password: z
-    .string()
-    .refine((val) => val === '' || val.length >= 8, 'Password must be at least 8 characters'),
-});
-
-export type UserCreateValues = z.infer<typeof userCreateSchema>;
-export type UserEditValues = z.infer<typeof userEditSchema>;
+export type UserValues = z.infer<typeof userSchema>;

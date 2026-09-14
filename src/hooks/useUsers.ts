@@ -1,28 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { User } from '@/types/user';
+import { usePagedQuery, type UsePagedQueryResult } from '@/hooks/usePagedQuery';
 import { userService } from '@/services/userService';
+import type { User } from '@/types/user';
 
-export function useUsers() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await userService.getUsers();
-      setUsers(data);
-    } catch {
-      setError('Failed to load users.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  return { users, isLoading, error, refetch: fetchUsers };
+/** /admin/personnel has no documented filter params — page/page_size only. */
+export function useUsers(): UsePagedQueryResult<User> {
+  return usePagedQuery<User, Record<string, never>>(
+    ({ page, pageSize }) => userService.getUsers({ page, pageSize }),
+    {},
+  );
 }

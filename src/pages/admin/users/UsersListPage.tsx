@@ -2,26 +2,38 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
+import { useRoles } from '@/hooks/useRoles';
+import { useDepotLocations } from '@/hooks/useDepotLocations';
 import { userService } from '@/services/userService';
+import { useToast } from '@/hooks/useToast';
 import { Table, type Column } from '@/components/tables/Table';
-import { Badge } from '@/components/badges/Badge';
+import { Pagination } from '@/components/tables/Pagination';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { ADMIN_PATHS } from '@/routes/paths';
 import type { User } from '@/types/user';
 
 export function UsersListPage() {
-  const { users, isLoading, error, refetch } = useUsers();
+  const { items, page, totalPages, total, isLoading, error, setPage, refetch } = useUsers();
+  const { roles } = useRoles();
+  const { depots } = useDepotLocations();
   const navigate = useNavigate();
+  const toast = useToast();
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const roleName = (roleId: number | null) => roles.find((r) => r.id === roleId)?.name ?? '—';
+  const depotName = (depotId: number | null) => depots.find((d) => d.id === depotId)?.name ?? '—';
 
   async function handleConfirmDelete() {
     if (!userToDelete) return;
     setIsDeleting(true);
     try {
       await userService.deleteUser(userToDelete.id);
+      toast.success('User deleted.');
       await refetch();
       setUserToDelete(null);
+    } catch {
+      toast.error('Failed to delete user.');
     } finally {
       setIsDeleting(false);
     }
@@ -29,10 +41,10 @@ export function UsersListPage() {
 
   const columns: Column<User>[] = [
     { header: 'Name', render: (u) => <span className="font-medium text-gray-900">{u.name}</span> },
-    { header: 'Email', render: (u) => u.email },
+    { header: 'Email', render: (u) => u.email ?? '—' },
     { header: 'Contact', render: (u) => u.contact },
-    { header: 'Role', render: (u) => <Badge label={u.role} color={u.role === 'Unassigned' ? 'gray' : 'blue'} /> },
-    { header: 'Status', render: (u) => <Badge label={u.status} color={u.status === 'active' ? 'green' : 'red'} /> },
+    { header: 'Role', render: (u) => roleName(u.roleId) },
+    { header: 'Depot', render: (u) => depotName(u.depotId) },
     {
       header: 'Actions',
       render: (u) => (
@@ -78,8 +90,12 @@ export function UsersListPage() {
             ))}
           </div>
         ) : (
-          <Table columns={columns} data={users} getRowKey={(u) => u.id} />
+          <Table columns={columns} data={items} getRowKey={(u) => String(u.id)} />
         )}
+      </div>
+
+      <div className="mt-4">
+        <Pagination currentPage={page} pageSize={10} totalPages={totalPages} totalItems={total} onPageChange={setPage} disabled={isLoading} />
       </div>
 
       <ConfirmDialog

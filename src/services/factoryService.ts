@@ -6,7 +6,7 @@
  *   DELETE /factory/production/{production_id}
  *   POST   /factory/supplies
  *   GET    /factory/supplies
- *   GET    /factory/supplies/{product_id}   -- see getSuppliesByProduct; docs/api/README.md open question 9
+ *   GET    /factory/supplies/{supply_id}    -- see getSupplyById
  *   PUT    /factory/supplies/{supply_id}
  *   DELETE /factory/supplies/{supply_id}
  *   GET    /factory/stock
@@ -284,17 +284,19 @@ export const factoryService = {
   },
 
   /**
-   * GET /factory/supplies/{product_id} — all supply records for a product, per
-   * docs/api/factory.md. Named explicitly (not "getSupplyById") because docs/api/depot.md
-   * refers to the same path as a single-supply-by-id fetch — see docs/api/README.md open
-   * question 9. Only the Factory document's reading is implemented here.
+   * GET /factory/supplies/{supply_id} — a single supply by its own id. Confirmed against
+   * openapi.json (docs/api/README.md open question 9, resolved): the response is one
+   * SupplyResponse, not an array — factory.md's "all supplies for a product" prose was
+   * wrong or stale. Not consumed by any page yet; kept for API completeness.
    */
-  async getSuppliesByProduct(productId: number): Promise<SupplyRecord[]> {
+  async getSupplyById(id: number): Promise<SupplyRecord> {
     if (apiConfig.useMockApi) {
-      return simulateDelay(mockSupplyStore.filter((s) => s.productId === productId));
+      const record = mockSupplyStore.find((s) => s.id === id);
+      if (!record) throw new Error('Supply record not found.');
+      return simulateDelay(record);
     }
-    const dtos = await apiRequest<SupplyHistoryDto[]>(`/factory/supplies/${productId}`);
-    return dtos.map(toSupplyRecord);
+    const dto = await apiRequest<SupplyHistoryDto>(`/factory/supplies/${id}`);
+    return toSupplyRecord(dto);
   },
 
   async createSupply(input: CreateSupplyInput): Promise<SupplyRecord> {
