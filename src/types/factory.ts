@@ -99,3 +99,34 @@ export interface UpdateProductionInput {
   quantityProduced: number;
   productionDate?: string;
 }
+
+export interface SupplyRecord {
+  id: number;
+  productId: number;
+  quantityId: number;
+  amount: number;
+  productName: string;
+  quantityValue: string;
+  status: SupplyStatus;
+  rejectionReason: string | null;
+  createdDate: string;
+}
+
+export interface FactoryStockItem {
+  id: number;
+  productId: number;
+  productName: string;
+  availableQuantity: number;
+  updatedDate: string;
+}
+
+export interface CreateSupplyInput {
+  productId: number;
+  quantityId: number;
+  amount: number;
+}
+
+export interface UpdateSupplyInput {
+  status: SupplyStatus;
+  rejectionReason?: string;
+}

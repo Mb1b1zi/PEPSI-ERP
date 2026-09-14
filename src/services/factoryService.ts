@@ -1,13 +1,19 @@
 /**
- * Factory Module — Production only (docs/api/factory.md). Endpoints implemented here:
+ * Factory Module (docs/api/factory.md). Endpoints implemented here:
  *   POST   /factory/production
  *   GET    /factory/production
  *   PUT    /factory/production/{production_id}
  *   DELETE /factory/production/{production_id}
+ *   POST   /factory/supplies
+ *   GET    /factory/supplies
+ *   GET    /factory/supplies/{product_id}   -- see getSuppliesByProduct; docs/api/README.md open question 9
+ *   PUT    /factory/supplies/{supply_id}
+ *   DELETE /factory/supplies/{supply_id}
+ *   GET    /factory/stock
+ *   GET    /factory/stock/{product_id}
  *
- * GET /factory/production/{product_id} (per-product history) is documented but not needed
- * by the current UI, so it isn't implemented. Supply History and Factory Stock endpoints are
- * out of scope for this file — they get their own service work alongside those screens.
+ * GET /factory/production/{product_id} (per-product production history) is documented but not
+ * needed by the current UI, so it isn't implemented.
  *
  * Reference implementation for the "Module implementation pattern" in CLAUDE.md: maps every
  * Dto to a domain type before it leaves this file, normalises pagination to Paged<T>, and
@@ -18,7 +24,7 @@ import { apiRequest } from '@/lib/apiClient';
 import { apiConfig } from '@/lib/config';
 import { pagedFromFactoryList } from '@/lib/pagination';
 import { buildQuery } from '@/lib/queryString';
-import { mockProductionRecords } from '@/mock/factory.mock';
+import { mockProductionRecords, mockSupplyRecords, mockFactoryStock } from '@/mock/factory.mock';
 import { catalogService } from '@/services/catalogService';
 import type { Paged } from '@/types/api';
 import type {
@@ -28,6 +34,14 @@ import type {
   ProductionRecord,
   CreateProductionInput,
   UpdateProductionInput,
+  SupplyHistoryDto,
+  CreateSupplyRequestDto,
+  UpdateSupplyRequestDto,
+  SupplyRecord,
+  CreateSupplyInput,
+  UpdateSupplyInput,
+  FactoryCurrentStockDto,
+  FactoryStockItem,
 } from '@/types/factory';
 
 function simulateDelay<T>(data: T, ms = 400): Promise<T> {
@@ -45,6 +59,30 @@ function toProductionRecord(dto: ProductionRecordDto): ProductionRecord {
   };
 }
 
+function toSupplyRecord(dto: SupplyHistoryDto): SupplyRecord {
+  return {
+    id: dto.id,
+    productId: dto.product_id,
+    quantityId: dto.quantity_id,
+    amount: dto.amount,
+    productName: dto.product_name,
+    quantityValue: dto.quantity_value,
+    status: dto.status,
+    rejectionReason: dto.rejection_reason,
+    createdDate: dto.created_date,
+  };
+}
+
+function toFactoryStockItem(dto: FactoryCurrentStockDto): FactoryStockItem {
+  return {
+    id: dto.id,
+    productId: dto.product_id,
+    productName: dto.product_name,
+    availableQuantity: dto.available_quantity,
+    updatedDate: dto.updated_date,
+  };
+}
+
 /** A 409 on DELETE means the record's stock can't be safely reduced — distinct from a generic failure. */
 export class ProductionDeleteConflictError extends Error {
   constructor() {
@@ -53,8 +91,20 @@ export class ProductionDeleteConflictError extends Error {
   }
 }
 
+/** A 409 on POST /factory/supplies means available factory stock is less than the requested amount. */
+export class InsufficientFactoryStockError extends Error {
+  constructor() {
+    super('Not enough factory stock available to dispatch this supply.');
+    this.name = 'InsufficientFactoryStockError';
+  }
+}
+
 function isConflict(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'status' in err && (err as { status: unknown }).status === 409;
+}
+
+function isNotFound(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'status' in err && (err as { status: unknown }).status === 404;
 }
 
 /** Documented max (docs/api/factory.md); also flagged as too small for a usable table page — docs/api/README.md open question 5. */
@@ -75,8 +125,20 @@ export interface GetProductionHistoryParams {
   quantity?: number;
 }
 
+export interface GetSupplyHistoryParams {
+  page: number;
+  pageSize: number;
+  date?: string;
+  productId?: number;
+  productName?: string;
+  quantity?: number;
+}
+
 let mockStore: ProductionRecord[] = [...mockProductionRecords];
 let nextMockId = mockStore.reduce((max, r) => Math.max(max, r.id), 0) + 1;
+
+let mockSupplyStore: SupplyRecord[] = [...mockSupplyRecords];
+let nextMockSupplyId = mockSupplyStore.reduce((max, s) => Math.max(max, s.id), 0) + 1;
 
 /** Mock-only interpretation (not a claim about real backend semantics): exact-date-prefix match. */
 function matchesMockFilters(record: ProductionRecord, params: GetProductionHistoryParams): boolean {
@@ -86,6 +148,17 @@ function matchesMockFilters(record: ProductionRecord, params: GetProductionHisto
     if (!record.productName.toLowerCase().includes(needle)) return false;
   }
   if (params.date && !record.productionDate.startsWith(params.date)) return false;
+  return true;
+}
+
+/** Same mock-only interpretation as production filtering above. */
+function matchesMockSupplyFilters(record: SupplyRecord, params: GetSupplyHistoryParams): boolean {
+  if (params.productId !== undefined && record.productId !== params.productId) return false;
+  if (params.productName) {
+    const needle = params.productName.toLowerCase();
+    if (!record.productName.toLowerCase().includes(needle)) return false;
+  }
+  if (params.date && !record.createdDate.startsWith(params.date)) return false;
   return true;
 }
 
@@ -183,6 +256,145 @@ export const factoryService = {
     } catch (err) {
       if (isConflict(err)) {
         throw new ProductionDeleteConflictError();
+      }
+      throw err;
+    }
+  },
+
+  async getSupplyHistory(params: GetSupplyHistoryParams): Promise<Paged<SupplyRecord>> {
+    const limit = Math.min(params.pageSize, MAX_LIMIT);
+    const skip = (params.page - 1) * limit;
+
+    if (apiConfig.useMockApi) {
+      const filtered = mockSupplyStore.filter((s) => matchesMockSupplyFilters(s, params));
+      const page = filtered.slice(skip, skip + limit);
+      return simulateDelay(pagedFromFactoryList(page, { skip, limit }));
+    }
+
+    const query = buildQuery({
+      skip,
+      limit,
+      date: params.date,
+      product_id: params.productId,
+      product_name: params.productName,
+      quantity: params.quantity,
+    });
+    const dtos = await apiRequest<SupplyHistoryDto[]>(`/factory/supplies${query}`);
+    return pagedFromFactoryList(dtos.map(toSupplyRecord), { skip, limit });
+  },
+
+  /**
+   * GET /factory/supplies/{product_id} — all supply records for a product, per
+   * docs/api/factory.md. Named explicitly (not "getSupplyById") because docs/api/depot.md
+   * refers to the same path as a single-supply-by-id fetch — see docs/api/README.md open
+   * question 9. Only the Factory document's reading is implemented here.
+   */
+  async getSuppliesByProduct(productId: number): Promise<SupplyRecord[]> {
+    if (apiConfig.useMockApi) {
+      return simulateDelay(mockSupplyStore.filter((s) => s.productId === productId));
+    }
+    const dtos = await apiRequest<SupplyHistoryDto[]>(`/factory/supplies/${productId}`);
+    return dtos.map(toSupplyRecord);
+  },
+
+  async createSupply(input: CreateSupplyInput): Promise<SupplyRecord> {
+    if (apiConfig.useMockApi) {
+      const products = await catalogService.getProducts();
+      const quantities = await catalogService.getQuantities();
+      const product = products.find((p) => p.id === input.productId);
+      const quantity = quantities.find((q) => q.id === input.quantityId);
+      const record: SupplyRecord = {
+        id: nextMockSupplyId++,
+        productId: input.productId,
+        quantityId: input.quantityId,
+        amount: input.amount,
+        productName: product?.name ?? `Product ${input.productId}`,
+        quantityValue: quantity?.value ?? `Quantity ${input.quantityId}`,
+        status: 'pending',
+        rejectionReason: null,
+        createdDate: new Date().toISOString(),
+      };
+      mockSupplyStore = [record, ...mockSupplyStore];
+      return simulateDelay(record);
+    }
+
+    const body: CreateSupplyRequestDto = {
+      product_id: input.productId,
+      quantity_id: input.quantityId,
+      amount: input.amount,
+    };
+    try {
+      const dto = await apiRequest<SupplyHistoryDto>('/factory/supplies', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      return toSupplyRecord(dto);
+    } catch (err) {
+      if (isConflict(err)) {
+        throw new InsufficientFactoryStockError();
+      }
+      throw err;
+    }
+  },
+
+  async updateSupply(id: number, input: UpdateSupplyInput): Promise<SupplyRecord> {
+    if (input.status === 'rejected' && !input.rejectionReason?.trim()) {
+      throw new Error('A rejection reason is required when rejecting a supply.');
+    }
+
+    if (apiConfig.useMockApi) {
+      const existing = mockSupplyStore.find((s) => s.id === id);
+      if (!existing) {
+        throw new Error('Supply record not found.');
+      }
+      const updated: SupplyRecord = {
+        ...existing,
+        status: input.status,
+        rejectionReason: input.status === 'rejected' ? (input.rejectionReason ?? null) : null,
+      };
+      mockSupplyStore = mockSupplyStore.map((s) => (s.id === id ? updated : s));
+      return simulateDelay(updated);
+    }
+
+    const body: UpdateSupplyRequestDto = {
+      status: input.status,
+      rejection_reason: input.rejectionReason,
+    };
+    const dto = await apiRequest<SupplyHistoryDto>(`/factory/supplies/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    return toSupplyRecord(dto);
+  },
+
+  async deleteSupply(id: number): Promise<void> {
+    if (apiConfig.useMockApi) {
+      mockSupplyStore = mockSupplyStore.filter((s) => s.id !== id);
+      return simulateDelay(undefined);
+    }
+    return apiRequest<void>(`/factory/supplies/${id}`, { method: 'DELETE' });
+  },
+
+  async getFactoryStock(): Promise<FactoryStockItem[]> {
+    if (apiConfig.useMockApi) {
+      return simulateDelay(mockFactoryStock);
+    }
+    const dtos = await apiRequest<FactoryCurrentStockDto[]>('/factory/stock');
+    return dtos.map(toFactoryStockItem);
+  },
+
+  /** GET /factory/stock/{product_id} — returns null on the documented 404 (no stock row yet). */
+  async getFactoryStockByProduct(productId: number): Promise<FactoryStockItem | null> {
+    if (apiConfig.useMockApi) {
+      const item = mockFactoryStock.find((s) => s.productId === productId);
+      return simulateDelay(item ?? null);
+    }
+    try {
+      const dto = await apiRequest<FactoryCurrentStockDto>(`/factory/stock/${productId}`);
+      return toFactoryStockItem(dto);
+    } catch (err) {
+      if (isNotFound(err)) {
+        return null;
       }
       throw err;
     }

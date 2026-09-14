@@ -48,4 +48,9 @@ export const FACTORY_PATHS = {
     list: '/factory/production',
     add: '/factory/production/add',
   },
+  supplies: {
+    list: '/factory/supplies',
+    add: '/factory/supplies/add',
+  },
+  stock: '/factory/stock',
 } as const;

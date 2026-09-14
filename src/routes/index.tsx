@@ -10,6 +10,9 @@ import { DepotsPage } from '@/pages/admin/depots/DepotsPage';
 import { ProductsPage } from '@/pages/admin/products/ProductsPage';
 import { ProductionPage } from '@/pages/factory/ProductionPage';
 import { ProductionFormPage } from '@/pages/factory/ProductionFormPage';
+import { SuppliesPage } from '@/pages/factory/SuppliesPage';
+import { SupplyFormPage } from '@/pages/factory/SupplyFormPage';
+import { FactoryStockPage } from '@/pages/factory/FactoryStockPage';
 import { RestockListPage } from '@/pages/admin/depotOps/RestockListPage';
 import { RestockDecidePage } from '@/pages/admin/depotOps/RestockDecidePage';
 import { RestockEditPage } from '@/pages/admin/depotOps/RestockEditPage';
@@ -37,6 +40,10 @@ export const router = createBrowserRouter([
       { path: FACTORY_PATHS.production.list, element: <ProductionPage /> },
       { path: FACTORY_PATHS.production.add, element: <ProductionFormPage /> },
       { path: '/factory/production/:id/edit', element: <ProductionFormPage /> },
+      { path: FACTORY_PATHS.supplies.list, element: <SuppliesPage /> },
+      { path: FACTORY_PATHS.supplies.add, element: <SupplyFormPage /> },
+      { path: '/factory/supplies/:id/edit', element: <SupplyFormPage /> },
+      { path: FACTORY_PATHS.stock, element: <FactoryStockPage /> },
       { path: ADMIN_PATHS.depotOps.restock.list, element: <RestockListPage /> },
       { path: ADMIN_PATHS.depotOps.restock.decide, element: <RestockDecidePage /> },
       { path: '/admin/depot-operations/restock/:id/edit', element: <RestockEditPage /> },
