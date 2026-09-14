@@ -70,3 +70,32 @@ export interface UpdateSupplyRequestDto {
   status: SupplyStatus;
   rejection_reason?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Domain types (frontend-facing). CamelCase, never snake_case. These are what
+// a service returns and what a hook/page/component may import — the Dtos
+// above never cross that boundary. Dates are kept as ISO strings (matching
+// the wire format's own representation) rather than converted to `Date`,
+// since nothing here does date arithmetic that would benefit from it.
+// ---------------------------------------------------------------------------
+
+export interface ProductionRecord {
+  id: number;
+  productId: number;
+  productName: string;
+  quantityProduced: number;
+  productionDate: string;
+  createdDate: string;
+}
+
+export interface CreateProductionInput {
+  productId: number;
+  quantityProduced: number;
+  productionDate?: string;
+}
+
+export interface UpdateProductionInput {
+  productId: number;
+  quantityProduced: number;
+  productionDate?: string;
+}

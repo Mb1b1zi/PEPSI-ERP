@@ -37,3 +37,15 @@ export const ADMIN_PATHS = {
     currentSales: '/admin/depot-operations/sales-current',
   },
 } as const;
+
+/**
+ * Separate from ADMIN_PATHS by design (see "Module implementation pattern" in CLAUDE.md).
+ * ADMIN_PATHS.factory above is now dead/unused — its pages were retired in favor of these —
+ * but is left in place rather than edited, since ADMIN_PATHS itself must not be altered here.
+ */
+export const FACTORY_PATHS = {
+  production: {
+    list: '/factory/production',
+    add: '/factory/production/add',
+  },
+} as const;

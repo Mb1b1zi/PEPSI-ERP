@@ -54,3 +54,22 @@ When adding a new module, follow this chain: define the type in `types/`, seed d
 - Every service must map DTOs into frontend domain types before returning data — no DTO may cross into a hook, page, or component.
 - All paginated endpoints must be normalised to `Paged<T>` (`src/types/api.ts`) inside the service, using the adapters in `src/lib/pagination.ts` — no other pagination shape is allowed above the service layer.
 - A 2xx HTTP response never by itself means business success where the response body carries its own `status` field — read the body's status (see `assertBusinessStatus` in `src/lib/apiClient.ts`).
+
+## Shared primitives
+- `useToast` (`src/hooks/useToast.ts`, provider mounted in `src/main.tsx`) is the only approved way to surface success and failure to the user. Don't roll a one-off banner or alert for a new flow — use it.
+- `usePagedQuery` (`src/hooks/usePagedQuery.ts`) plus `Pagination` (`src/components/tables/Pagination.tsx`) is the only approved pattern for a server-paginated table. It's deliberately backend-agnostic — normalising a module's own pagination scheme into `Paged<T>` stays the service's job, never the hook's.
+- `catalogService` (`src/services/catalogService.ts`) is a temporary, mock-backed stand-in for the undocumented Admin module (products/quantities/depots) — it exists only so Factory/Depot forms have something to populate `product_id`/`quantity_id`/`depot_id` selectors from. Replace it once Admin ships; do not extend it or point it at a guessed endpoint shape.
+
+## Module implementation pattern
+Every module wired to a real backend (Factory Production is the reference — `src/services/factoryService.ts`) follows this exact chain. Every subsequent module must follow it too:
+
+1. **`docs/api/<module>.md`** — the source of truth for the wire contract. Read it in full before writing anything; never fill a gap from another module's document.
+2. **Dto types** (`src/types/<module>.ts`) — snake_case, mirror the backend's field names and casing verbatim, confined to the service layer.
+3. **Domain types** (same file, in a clearly separated section, or a dedicated type file) — camelCase, what a hook/page/component actually sees. No Dto may cross that boundary.
+4. **Mapper** — an explicit function per Dto→domain conversion, living in the service file. No page, hook, or component may ever see a Dto.
+5. **Service with a mock/real switch** — every data method branches on `apiConfig.useMockApi` (`src/lib/config.ts`, `VITE_USE_MOCK_API`): the mock branch reads a `src/mock/<module>.mock.ts` file via the existing `simulateDelay` pattern, the real branch calls `apiRequest`. **Both branches must return the identical domain shape** — never let them diverge.
+6. **`Paged<T>` normalisation** — any paginated endpoint is normalised inside the service using the adapters in `src/lib/pagination.ts`, matching whatever pagination scheme that module's backend actually uses (skip/limit, page/page_size, or something else). No other pagination shape is allowed above the service layer.
+7. **Hook** — wraps `usePagedQuery` (list data) or a plain fetch-on-mount hook (single resource), calling the service only. Must never import `apiClient` or a Dto type.
+8. **Page** — consumes the hook, uses `Table`/`Pagination`/`Badge`/`FormField`/`ConfirmDialog` as-is, and reports every create/update/delete outcome through `useToast`.
+
+A documented contradiction between two modules' docs (field semantics, endpoint shape, etc.) is never resolved by guessing or by borrowing the other module's reading — implement only what that module's own document says, name the method so the ambiguity can't be assumed away, and record the contradiction as a new open question in `docs/api/README.md`.
