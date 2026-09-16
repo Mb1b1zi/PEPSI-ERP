@@ -1,4 +1,5 @@
 import { apiConfig } from './config';
+import { getStoredSession, clearStoredSession } from './authSession';
 import type { ApiError, FastApiValidationError } from '@/types/api';
 
 async function parseApiError(response: Response): Promise<ApiError> {
@@ -22,14 +23,36 @@ async function parseApiError(response: Response): Promise<ApiError> {
   return { status: response.status, message, validationErrors };
 }
 
+/**
+ * Set by AuthProvider on mount so a 401 from any request can send the user back to /login
+ * without apiClient needing to know about React Router. Left null (no-op) until then, e.g.
+ * for requests made before the app has finished its first render.
+ */
+let onUnauthorized: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const session = getStoredSession();
+
   const response = await fetch(`${apiConfig.baseUrl}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      ...init?.headers,
+    },
   });
 
   if (!response.ok) {
-    throw await parseApiError(response);
+    const error = await parseApiError(response);
+    if (error.status === 401) {
+      clearStoredSession();
+      onUnauthorized?.();
+    }
+    throw error;
   }
 
   if (response.status === 204) {

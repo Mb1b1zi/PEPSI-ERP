@@ -3,6 +3,7 @@ import { depotService } from '@/services/depotService';
 import type { SaleRecord } from '@/types/sale';
 
 export interface SalesFilters {
+  depotId?: number;
   productName?: string;
   dateFrom?: string;
   dateTo?: string;

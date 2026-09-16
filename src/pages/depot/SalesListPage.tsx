@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useSalesHistory, type SalesFilters } from '@/hooks/useSalesHistory';
+import { useCatalog } from '@/hooks/useCatalog';
 import { depotService } from '@/services/depotService';
 import { getApiErrorMessage } from '@/lib/apiClient';
 import { useToast } from '@/hooks/useToast';
@@ -15,11 +16,13 @@ const inputClasses =
   'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
 
 export function SalesListPage() {
+  const [depotIdInput, setDepotIdInput] = useState('');
   const [productNameInput, setProductNameInput] = useState('');
   const [dateFromInput, setDateFromInput] = useState('');
   const [dateToInput, setDateToInput] = useState('');
   const [appliedFilters, setAppliedFilters] = useState<SalesFilters>({});
   const { items, page, totalPages, total, isLoading, error, setPage, refetch } = useSalesHistory(appliedFilters);
+  const { depots, products, isLoading: isCatalogLoading } = useCatalog();
   const navigate = useNavigate();
   const toast = useToast();
   const [saleToDelete, setSaleToDelete] = useState<SaleRecord | null>(null);
@@ -27,7 +30,8 @@ export function SalesListPage() {
 
   function handleApplyFilters() {
     setAppliedFilters({
-      productName: productNameInput.trim() || undefined,
+      depotId: depotIdInput === '' ? undefined : Number(depotIdInput),
+      productName: productNameInput || undefined,
       dateFrom: dateFromInput || undefined,
       dateTo: dateToInput || undefined,
     });
@@ -93,8 +97,36 @@ export function SalesListPage() {
 
       <div className="mt-6 flex items-end gap-3 flex-wrap">
         <div>
-          <label className="text-sm font-medium text-gray-700 block mb-1.5">Product Name</label>
-          <input value={productNameInput} onChange={(e) => setProductNameInput(e.target.value)} className={inputClasses} placeholder="e.g. Pepsi" />
+          <label className="text-sm font-medium text-gray-700 block mb-1.5">Depot</label>
+          <select
+            value={depotIdInput}
+            onChange={(e) => setDepotIdInput(e.target.value)}
+            disabled={isCatalogLoading}
+            className={inputClasses}
+          >
+            <option value="">All depots</option>
+            {depots.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1.5">Product</label>
+          <select
+            value={productNameInput}
+            onChange={(e) => setProductNameInput(e.target.value)}
+            disabled={isCatalogLoading}
+            className={inputClasses}
+          >
+            <option value="">All products</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.name}>
+                {p.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="text-sm font-medium text-gray-700 block mb-1.5">From</label>

@@ -1,3 +1,7 @@
+export const AUTH_PATHS = {
+  login: '/login',
+} as const;
+
 export const ADMIN_PATHS = {
   dashboard: '/admin/dashboard',
   roles: '/admin/roles',
@@ -44,6 +48,7 @@ export const ADMIN_PATHS = {
  * but is left in place rather than edited, since ADMIN_PATHS itself must not be altered here.
  */
 export const FACTORY_PATHS = {
+  dashboard: '/factory/dashboard',
   production: {
     list: '/factory/production',
     add: '/factory/production/add',
@@ -57,6 +62,7 @@ export const FACTORY_PATHS = {
 
 /** Same reasoning as FACTORY_PATHS — ADMIN_PATHS.depotOps above is now dead/unused. */
 export const DEPOT_PATHS = {
+  dashboard: '/depot/dashboard',
   restock: {
     list: '/depot/restock',
     decide: '/depot/restock/decide',
@@ -67,4 +73,12 @@ export const DEPOT_PATHS = {
     add: '/depot/sales/add',
   },
   currentSales: '/depot/sales-current',
+} as const;
+
+/** Cross-module oversight screens (Boss-level: production + supplies + depot restock/sales
+ *  together) — not owned by any single module, so kept separate from ADMIN/FACTORY/DEPOT_PATHS. */
+export const REPORTS_PATHS = {
+  overview: '/reports/overview',
+  sales: '/reports/sales',
+  stock: '/reports/stock',
 } as const;
