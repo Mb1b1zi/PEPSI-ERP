@@ -33,6 +33,7 @@ export function DepotsPage() {
 
   const columns: Column<Depot>[] = [
     { header: 'Name', render: (d) => <span className="font-medium text-gray-900">{d.name}</span> },
+    { header: 'Location', render: (d) => d.location },
     {
       header: 'Actions',
       render: (d) => (

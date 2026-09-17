@@ -18,8 +18,8 @@ export const mockQuantities: Quantity[] = [
 ];
 
 export const mockDepots: Depot[] = [
-  { id: 1, name: 'Kampala Central Depot' },
-  { id: 2, name: 'Ntinda Depot' },
-  { id: 3, name: 'Nakawa Depot' },
-  { id: 4, name: 'Mukono Depot' },
+  { id: 1, name: 'Kampala Central Depot', location: 'Kampala' },
+  { id: 2, name: 'Ntinda Depot', location: 'Ntinda' },
+  { id: 3, name: 'Nakawa Depot', location: 'Nakawa' },
+  { id: 4, name: 'Mukono Depot', location: 'Mukono' },
 ];

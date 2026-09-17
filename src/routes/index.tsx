@@ -54,7 +54,6 @@ export const router = createBrowserRouter([
           { path: '/admin/depots/:id/edit', element: <DepotFormPage /> },
           { path: ADMIN_PATHS.products.list, element: <ProductsPage /> },
           { path: ADMIN_PATHS.products.add, element: <ProductFormPage /> },
-          { path: '/admin/products/:id/edit', element: <ProductFormPage /> },
           { path: FACTORY_PATHS.dashboard, element: <FactoryDashboardPage /> },
           { path: FACTORY_PATHS.production.list, element: <ProductionPage /> },
           { path: FACTORY_PATHS.production.add, element: <ProductionFormPage /> },

@@ -31,10 +31,19 @@ export interface UpdateProductionRequestDto {
   production_date?: string;
 }
 
+/**
+ * quantity_id/quantity_value are always null in the live data today (confirmed against the
+ * real API, 2026-09-17) — factory stock isn't currently tracked per pack-size, only per
+ * product. Modelled as nullable rather than omitted since the live openapi.json schema
+ * (FactoryStockResponse) declares them as real fields on every row, not something the backend
+ * only sometimes sends.
+ */
 export interface FactoryCurrentStockDto {
   id: number;
   product_id: number;
   product_name: string;
+  quantity_id: number | null;
+  quantity_value: string | null;
   available_quantity: number;
   updated_date: string;
 }
@@ -116,6 +125,8 @@ export interface FactoryStockItem {
   id: number;
   productId: number;
   productName: string;
+  quantityId: number | null;
+  quantityValue: string | null;
   availableQuantity: number;
   updatedDate: string;
 }
