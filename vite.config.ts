@@ -17,12 +17,14 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      // Dev-only: forwards Factory/Depot/Admin API calls to the real backend so the browser
-      // never has to deal with CORS. Has no effect on `vite build`.
+      // Dev-only: forwards Factory/Depot/Admin/Auth/Dashboard API calls to the real backend so
+      // the browser never has to deal with CORS. Has no effect on `vite build`.
       proxy: {
         '/factory': backendOrigin,
         '/depot': backendOrigin,
         '/admin': backendOrigin,
+        '/auth': backendOrigin,
+        '/dashboard': backendOrigin,
       },
     },
   }

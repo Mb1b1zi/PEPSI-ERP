@@ -28,9 +28,9 @@ export const mockSupplyRecords: SupplyRecord[] = [
 
 /** One row per product, per docs/api/factory.md ("one current stock row per product"). */
 export const mockFactoryStock: FactoryStockItem[] = [
-  { id: 1, productId: 1, productName: 'Pepsi 1L', availableQuantity: 1200, updatedDate: '2026-09-07T08:00:05Z' },
-  { id: 2, productId: 2, productName: 'Mirinda 500ml', availableQuantity: 650, updatedDate: '2026-09-05T09:00:03Z' },
-  { id: 3, productId: 3, productName: '7up 500ml', availableQuantity: 790, updatedDate: '2026-09-06T07:45:02Z' },
-  { id: 4, productId: 4, productName: 'Pepsi 500ml', availableQuantity: 2320, updatedDate: '2026-09-07T08:30:04Z' },
-  { id: 5, productId: 5, productName: 'Mountain Dew 1L', availableQuantity: 420, updatedDate: '2026-09-06T10:15:06Z' },
+  { id: 1, productId: 1, productName: 'Pepsi 1L', quantityId: null, quantityValue: null, availableQuantity: 1200, updatedDate: '2026-09-07T08:00:05Z' },
+  { id: 2, productId: 2, productName: 'Mirinda 500ml', quantityId: null, quantityValue: null, availableQuantity: 650, updatedDate: '2026-09-05T09:00:03Z' },
+  { id: 3, productId: 3, productName: '7up 500ml', quantityId: null, quantityValue: null, availableQuantity: 790, updatedDate: '2026-09-06T07:45:02Z' },
+  { id: 4, productId: 4, productName: 'Pepsi 500ml', quantityId: null, quantityValue: null, availableQuantity: 2320, updatedDate: '2026-09-07T08:30:04Z' },
+  { id: 5, productId: 5, productName: 'Mountain Dew 1L', quantityId: null, quantityValue: null, availableQuantity: 420, updatedDate: '2026-09-06T10:15:06Z' },
 ];

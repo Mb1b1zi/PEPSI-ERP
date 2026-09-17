@@ -10,10 +10,15 @@
  *   PUT    /factory/supplies/{supply_id}
  *   DELETE /factory/supplies/{supply_id}
  *   GET    /factory/stock
- *   GET    /factory/stock/{product_id}
+ *   GET    /factory/stock/{product_id}/{quantity_id}
  *
  * GET /factory/production/{product_id} (per-product production history) is documented but not
  * needed by the current UI, so it isn't implemented.
+ *
+ * Note: factory.md (predates openapi.json, may have drifted — see docs/api/README.md) documents
+ * the stock-by-id route as GET /factory/stock/{product_id} (one path param). The live spec's
+ * real route takes two — {product_id}/{quantity_id} — confirmed against a real call. Per "the
+ * spec wins" (docs/api/README.md), this file follows the live spec's shape, not factory.md's.
  *
  * Reference implementation for the "Module implementation pattern" in CLAUDE.md: maps every
  * Dto to a domain type before it leaves this file, normalises pagination to Paged<T>, and
@@ -78,6 +83,8 @@ function toFactoryStockItem(dto: FactoryCurrentStockDto): FactoryStockItem {
     id: dto.id,
     productId: dto.product_id,
     productName: dto.product_name,
+    quantityId: dto.quantity_id,
+    quantityValue: dto.quantity_value,
     availableQuantity: dto.available_quantity,
     updatedDate: dto.updated_date,
   };
@@ -385,14 +392,22 @@ export const factoryService = {
     return dtos.map(toFactoryStockItem);
   },
 
-  /** GET /factory/stock/{product_id} — returns null on the documented 404 (no stock row yet). */
-  async getFactoryStockByProduct(productId: number): Promise<FactoryStockItem | null> {
+  /**
+   * GET /factory/stock/{product_id}/{quantity_id} — returns null on the documented 404 (no
+   * stock row yet). Two path params, not one: factory.md (stale, predates openapi.json) only
+   * documents GET /factory/stock/{product_id}; the live spec's real route requires quantity_id
+   * too. Since stock isn't currently tracked per pack-size (quantity_id is always null on every
+   * live row today — see FactoryCurrentStockDto), this only matches a row once the backend
+   * starts populating quantity_id; querying by product alone isn't possible against the real
+   * API, unlike the list endpoint above.
+   */
+  async getFactoryStockByProduct(productId: number, quantityId: number): Promise<FactoryStockItem | null> {
     if (apiConfig.useMockApi) {
-      const item = mockFactoryStock.find((s) => s.productId === productId);
+      const item = mockFactoryStock.find((s) => s.productId === productId && s.quantityId === quantityId);
       return simulateDelay(item ?? null);
     }
     try {
-      const dto = await apiRequest<FactoryCurrentStockDto>(`/factory/stock/${productId}`);
+      const dto = await apiRequest<FactoryCurrentStockDto>(`/factory/stock/${productId}/${quantityId}`);
       return toFactoryStockItem(dto);
     } catch (err) {
       if (isNotFound(err)) {

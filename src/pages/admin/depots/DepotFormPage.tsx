@@ -25,13 +25,13 @@ export function DepotFormPage() {
     formState: { errors },
   } = useForm<DepotValues>({
     resolver: zodResolver(depotSchema),
-    defaultValues: { name: '' },
+    defaultValues: { name: '', location: '' },
   });
 
   useEffect(() => {
     if (id) {
       depotLocationService.getDepotById(Number(id)).then((depot) => {
-        if (depot) reset({ name: depot.name });
+        if (depot) reset({ name: depot.name, location: depot.location });
       });
     }
   }, [id, reset]);
@@ -64,6 +64,10 @@ export function DepotFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 bg-white border border-gray-200 rounded-lg p-6 flex flex-col gap-5">
         <FormField label="Name" error={errors.name?.message} required>
           <input {...register('name')} className={inputClasses} placeholder="e.g. Nakawa Depot" />
+        </FormField>
+
+        <FormField label="Location" error={errors.location?.message} required>
+          <input {...register('location')} className={inputClasses} placeholder="e.g. Nakawa" />
         </FormField>
 
         <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
