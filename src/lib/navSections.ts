@@ -25,19 +25,41 @@ export function isAdminTier(user: AuthUser): boolean {
   return ADMIN_MANAGEMENT_PERMISSIONS.some((p) => user.permissions.includes(p));
 }
 
+/** Same set reportsNavConfig.tsx gates "Company Overview" on, and roleLanding.ts's landing-path
+ *  logic — genuine cross-company read access (production + supplies + depot restock + depot
+ *  sales), the Boss/CEO signal. Kept here as the single source of truth; roleLanding.ts imports
+ *  it rather than redefining it. */
+export const CROSS_COMPANY_PERMISSIONS: Permission[] = [
+  'factory.production:read',
+  'factory.supplies:read',
+  'depot.restock:read',
+  'depot.sales:read',
+];
+
+export function isCrossCompany(user: AuthUser): boolean {
+  return CROSS_COMPANY_PERMISSIONS.every((p) => user.permissions.includes(p));
+}
+
 /**
- * Admin is an exclusive tier: an account that can actually manage personnel/roles sees only the
- * Admin section, full stop — even if it also holds other permissions, as the bootstrap Boss
- * account always does (auth.md: whichever role is named exactly "Boss" is auto-granted every
- * permission on every startup, additively, so its permission set can never be narrowed — this
- * is a bootstrap-only account, not the same thing as the company's actual Boss/CEO persona).
+ * Admin (exclusive) and cross-company Boss/CEO (full merge) are handled first, same as before.
  *
- * Everyone else — Factory Manager, Depot Attendant, or a view-only Boss/CEO account with broad
- * read access (including into personnel, to see who works where) but no ability to create,
- * edit, or delete anyone or any role — sees the full merge instead, still filtered item-by-item
- * by filterNavItems as usual (so e.g. Boss sees "All Users" but not "Add User").
+ * Everyone else — Factory Manager, Depot Attendant, or any other single-purpose role — sees
+ * ONLY their own module's section(s), never Admin's catalog-browsing screens (Depots/Products/
+ * Quantities/Prices) and never Reports, even though they typically hold read permissions like
+ * admin.products:read/admin.depots:read too. Those are granted so their OWN forms' dropdowns
+ * can populate (e.g. picking a product when adding a sale) — not so they get a whole navigable
+ * "browse the product catalog" section. A role is scoped to Factory if it holds any
+ * factory.production/factory.supplies permission, and to Depot the same way for
+ * depot.restock/depot.sales — matching exactly what that module's own endpoints grant, nothing
+ * from another module bleeding in just because a read permission happens to overlap.
  */
 export function getNavSections(user: AuthUser): NavItem[] {
   if (isAdminTier(user)) return adminNavConfig;
-  return [...adminNavConfig, ...factoryNavConfig, ...depotNavConfig, ...reportsNavConfig];
+  if (isCrossCompany(user)) return [...adminNavConfig, ...factoryNavConfig, ...depotNavConfig, ...reportsNavConfig];
+
+  const hasPrefix = (prefix: string) => user.permissions.some((p) => p.startsWith(prefix));
+  const sections: NavItem[] = [];
+  if (hasPrefix('factory.')) sections.push(...factoryNavConfig);
+  if (hasPrefix('depot.')) sections.push(...depotNavConfig);
+  return sections;
 }
