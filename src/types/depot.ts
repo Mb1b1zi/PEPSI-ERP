@@ -73,9 +73,11 @@ export interface UpdateSaleRequestDto {
 }
 
 /**
- * Confirmed against docs/api/openapi.json's SaleResponse (docs/api/depot.md itself gives no
- * complete JSON example for POST/GET /depot/sales responses) — the shape guessed here turned
- * out correct, except `sold_by_id` is nullable, fixed below.
+ * Confirmed against docs/api/openapi.json's SaleResponse. Field is `amount_sold` (matching the
+ * request body's field name) as of 2026-09-18 — this used to be `sold_amount`, the exact
+ * request/response naming mismatch docs/api/README.md open question 7 flagged; the backend has
+ * since fixed it here (GET /depot/sales-current's `sold_amount` is unrelated and unchanged —
+ * see SalesCurrentEntryDto below).
  */
 export interface SaleDto {
   id: number;
@@ -86,7 +88,7 @@ export interface SaleDto {
   quantity_id: number;
   quantity_value: string;
   quantity_sold: number;
-  sold_amount: number;
+  amount_sold: number;
   sold_by_id: number | null;
   sale_date: string;
   sale_time: string;

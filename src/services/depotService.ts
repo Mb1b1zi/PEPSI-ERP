@@ -100,7 +100,7 @@ function toSaleRecord(dto: SaleDto): SaleRecord {
     quantityId: dto.quantity_id,
     quantityValue: dto.quantity_value,
     quantitySold: dto.quantity_sold,
-    soldAmount: dto.sold_amount,
+    soldAmount: dto.amount_sold,
     soldById: dto.sold_by_id,
     saleDate: dto.sale_date,
     saleTime: dto.sale_time,
@@ -398,20 +398,25 @@ export const depotService = {
       return simulateDelay(record);
     }
 
-    const body: CreateSaleRequestDto = {
-      depot_id: input.depotId,
-      product_id: input.productId,
-      quantity_id: input.quantityId,
-      quantity_sold: input.quantitySold,
-      sold_by_id: input.soldById,
-      amount_sold: input.amountSold,
-    };
+    // POST /depot/sales takes an array too (same batch-creation convention as every Admin
+    // resource and /factory/production, /factory/supplies — confirmed against openapi.json,
+    // 2026-09-18; this endpoint used to take a single object).
+    const body: CreateSaleRequestDto[] = [
+      {
+        depot_id: input.depotId,
+        product_id: input.productId,
+        quantity_id: input.quantityId,
+        quantity_sold: input.quantitySold,
+        sold_by_id: input.soldById,
+        amount_sold: input.amountSold,
+      },
+    ];
     try {
-      const dto = await apiRequest<SaleDto>('/depot/sales', {
+      const dtos = await apiRequest<SaleDto[]>('/depot/sales', {
         method: 'POST',
         body: JSON.stringify(body),
       });
-      return toSaleRecord(dto);
+      return toSaleRecord(dtos[0]);
     } catch (err) {
       if (isConflict(err)) {
         throw new InsufficientDepotStockError();

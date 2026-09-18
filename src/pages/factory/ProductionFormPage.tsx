@@ -37,7 +37,7 @@ export function ProductionFormPage() {
   const location = useLocation();
   const existingRecord = location.state as ProductionRecord | null;
   const toast = useToast();
-  const { products, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
+  const { products, quantities, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -49,10 +49,11 @@ export function ProductionFormPage() {
     defaultValues: existingRecord
       ? {
           productId: existingRecord.productId,
+          quantityId: existingRecord.quantityId ?? undefined,
           quantityProduced: existingRecord.quantityProduced,
           productionDate: toDatetimeLocal(existingRecord.productionDate),
         }
-      : { productId: undefined, quantityProduced: undefined, productionDate: '' },
+      : { productId: undefined, quantityId: undefined, quantityProduced: undefined, productionDate: '' },
   });
 
   if (isEditMode && !existingRecord) {
@@ -75,6 +76,7 @@ export function ProductionFormPage() {
     try {
       const input = {
         productId: values.productId,
+        quantityId: values.quantityId,
         quantityProduced: values.quantityProduced,
         productionDate: toIsoOrUndefined(values.productionDate),
       };
@@ -116,6 +118,25 @@ export function ProductionFormPage() {
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </FormField>
+
+        <FormField label="Quantity" error={errors.quantityId?.message} required>
+          {isCatalogLoading ? (
+            <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
+          ) : catalogError ? (
+            <p className="text-sm text-red-600">Failed to load quantities: {catalogError}</p>
+          ) : (
+            <select {...register('quantityId')} className={selectClasses} defaultValue={existingRecord?.quantityId ?? ''}>
+              <option value="" disabled>
+                Select a quantity…
+              </option>
+              {quantities.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.value}
                 </option>
               ))}
             </select>

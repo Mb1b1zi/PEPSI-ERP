@@ -12,6 +12,7 @@ import { factoryService } from '@/services/factoryService';
 import { getApiErrorMessage } from '@/lib/apiClient';
 import { useCatalog } from '@/hooks/useCatalog';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/hooks/useAuth';
 import { FormField } from '@/components/forms/FormField';
 import { FACTORY_PATHS } from '@/routes/paths';
 import type { SupplyRecord } from '@/types/factory';
@@ -23,7 +24,8 @@ const selectClasses = inputClasses;
 function CreateSupplyForm() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { products, quantities, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
+  const { user } = useAuth();
+  const { products, quantities, depots, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -35,7 +37,10 @@ function CreateSupplyForm() {
   async function onSubmit(values: SupplyCreateValues) {
     setIsSubmitting(true);
     try {
-      await factoryService.createSupply(values);
+      // supplier_id is a required personnel id on the real backend — the logged-in user
+      // recording the dispatch is the natural default, since there's no supplier picker
+      // (nothing in this app models "suppliers" as a distinct concept from personnel).
+      await factoryService.createSupply({ ...values, supplierId: user?.personnelId ?? 0 });
       toast.success('Supply record created.');
       navigate(FACTORY_PATHS.supplies.list);
     } catch (err) {
@@ -88,6 +93,25 @@ function CreateSupplyForm() {
 
       <FormField label="Amount" error={errors.amount?.message} required>
         <input {...register('amount')} type="number" min={1} className={inputClasses} placeholder="e.g. 80" />
+      </FormField>
+
+      <FormField label="Depot" error={errors.depotId?.message} required>
+        {isCatalogLoading ? (
+          <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
+        ) : catalogError ? (
+          <p className="text-sm text-red-600">Failed to load depots: {catalogError}</p>
+        ) : (
+          <select {...register('depotId')} className={selectClasses} defaultValue="">
+            <option value="" disabled>
+              Select a depot…
+            </option>
+            {depots.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        )}
       </FormField>
 
       <div className="flex items-center gap-3 pt-2 border-t border-gray-100">

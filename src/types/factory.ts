@@ -4,16 +4,24 @@
  * component may import them; a service must map them into frontend domain types first.
  */
 
+/** quantity_id became required here (confirmed against openapi.json, 2026-09-18) — originally
+ *  production had no pack-size concept at all, only product + amount produced. */
 export interface CreateProductionRequestDto {
   product_id: number;
+  quantity_id: number;
   quantity_produced: number;
   production_date?: string;
 }
 
+/** quantity_id/quantity_value are required keys but nullable values — a production record
+ *  created before this field existed would show null; every record created through this app
+ *  from now on always populates it (createProduction always sends quantity_id). */
 export interface ProductionRecordDto {
   id: number;
   product_id: number;
   product_name: string;
+  quantity_id: number | null;
+  quantity_value: string | null;
   quantity_produced: number;
   production_date: string;
   created_date: string;
@@ -27,6 +35,7 @@ export interface ProductionRecordDto {
  */
 export interface UpdateProductionRequestDto {
   product_id: number;
+  quantity_id: number;
   quantity_produced: number;
   production_date?: string;
 }
@@ -48,14 +57,24 @@ export interface FactoryCurrentStockDto {
   updated_date: string;
 }
 
+/**
+ * depot_id/supplier_id became required here (confirmed against openapi.json, 2026-09-18) —
+ * originally supply creation had no depot/supplier concept at all. supplier_id is a personnel
+ * id, same convention as depot.md's ConfirmRestockInput/RejectRestockInput.
+ */
 export interface CreateSupplyRequestDto {
   product_id: number;
   quantity_id: number;
   amount: number;
+  depot_id: number;
+  supplier_id: number;
 }
 
 export type SupplyStatus = 'pending' | 'received' | 'rejected';
 
+/** depot_id/depot_name/supplier_id/supplier_name are required keys but nullable values — a
+ *  supply created before this fields existed would show null, but every supply created through
+ *  this app from now on always populates them (createSupply always sends both). */
 export interface SupplyHistoryDto {
   id: number;
   product_id: number;
@@ -63,6 +82,10 @@ export interface SupplyHistoryDto {
   amount: number;
   product_name: string;
   quantity_value: string;
+  depot_id: number | null;
+  depot_name: string | null;
+  supplier_id: number | null;
+  supplier_name: string | null;
   status: SupplyStatus;
   rejection_reason: string | null;
   created_date: string;
@@ -92,6 +115,8 @@ export interface ProductionRecord {
   id: number;
   productId: number;
   productName: string;
+  quantityId: number | null;
+  quantityValue: string | null;
   quantityProduced: number;
   productionDate: string;
   createdDate: string;
@@ -99,12 +124,14 @@ export interface ProductionRecord {
 
 export interface CreateProductionInput {
   productId: number;
+  quantityId: number;
   quantityProduced: number;
   productionDate?: string;
 }
 
 export interface UpdateProductionInput {
   productId: number;
+  quantityId: number;
   quantityProduced: number;
   productionDate?: string;
 }
@@ -116,6 +143,10 @@ export interface SupplyRecord {
   amount: number;
   productName: string;
   quantityValue: string;
+  depotId: number | null;
+  depotName: string | null;
+  supplierId: number | null;
+  supplierName: string | null;
   status: SupplyStatus;
   rejectionReason: string | null;
   createdDate: string;
@@ -135,6 +166,8 @@ export interface CreateSupplyInput {
   productId: number;
   quantityId: number;
   amount: number;
+  depotId: number;
+  supplierId: number;
 }
 
 export interface UpdateSupplyInput {

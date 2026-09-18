@@ -58,6 +58,8 @@ function toProductionRecord(dto: ProductionRecordDto): ProductionRecord {
     id: dto.id,
     productId: dto.product_id,
     productName: dto.product_name,
+    quantityId: dto.quantity_id,
+    quantityValue: dto.quantity_value,
     quantityProduced: dto.quantity_produced,
     productionDate: dto.production_date,
     createdDate: dto.created_date,
@@ -72,6 +74,10 @@ function toSupplyRecord(dto: SupplyHistoryDto): SupplyRecord {
     amount: dto.amount,
     productName: dto.product_name,
     quantityValue: dto.quantity_value,
+    depotId: dto.depot_id,
+    depotName: dto.depot_name,
+    supplierId: dto.supplier_id,
+    supplierName: dto.supplier_name,
     status: dto.status,
     rejectionReason: dto.rejection_reason,
     createdDate: dto.created_date,
@@ -139,6 +145,7 @@ export interface GetSupplyHistoryParams {
   productId?: number;
   productName?: string;
   quantity?: number;
+  depotId?: number;
 }
 
 let mockStore: ProductionRecord[] = [...mockProductionRecords];
@@ -161,6 +168,7 @@ function matchesMockFilters(record: ProductionRecord, params: GetProductionHisto
 /** Same mock-only interpretation as production filtering above. */
 function matchesMockSupplyFilters(record: SupplyRecord, params: GetSupplyHistoryParams): boolean {
   if (params.productId !== undefined && record.productId !== params.productId) return false;
+  if (params.depotId !== undefined && record.depotId !== params.depotId) return false;
   if (params.productName) {
     const needle = params.productName.toLowerCase();
     if (!record.productName.toLowerCase().includes(needle)) return false;
@@ -195,12 +203,16 @@ export const factoryService = {
   async createProduction(input: CreateProductionInput): Promise<ProductionRecord> {
     if (apiConfig.useMockApi) {
       const products = await catalogService.getProducts();
+      const quantities = await catalogService.getQuantities();
       const product = products.find((p) => p.id === input.productId);
+      const quantity = quantities.find((q) => q.id === input.quantityId);
       const now = new Date().toISOString();
       const record: ProductionRecord = {
         id: nextMockId++,
         productId: input.productId,
         productName: product?.name ?? `Product ${input.productId}`,
+        quantityId: input.quantityId,
+        quantityValue: quantity?.value ?? `Quantity ${input.quantityId}`,
         quantityProduced: input.quantityProduced,
         productionDate: input.productionDate ?? now,
         createdDate: now,
@@ -209,16 +221,23 @@ export const factoryService = {
       return simulateDelay(record);
     }
 
-    const body: CreateProductionRequestDto = {
-      product_id: input.productId,
-      quantity_produced: input.quantityProduced,
-      production_date: input.productionDate,
-    };
-    const dto = await apiRequest<ProductionRecordDto>('/factory/production', {
+    // POST /factory/production takes an array (ProductionCreate[] in, ProductionResponse[] out)
+    // — same batch-creation convention as every Admin resource (confirmed against openapi.json,
+    // 2026-09-18; this endpoint used to take a single object, and quantity_id used to not exist
+    // on it at all).
+    const body: CreateProductionRequestDto[] = [
+      {
+        product_id: input.productId,
+        quantity_id: input.quantityId,
+        quantity_produced: input.quantityProduced,
+        production_date: input.productionDate,
+      },
+    ];
+    const dtos = await apiRequest<ProductionRecordDto[]>('/factory/production', {
       method: 'POST',
       body: JSON.stringify(body),
     });
-    return toProductionRecord(dto);
+    return toProductionRecord(dtos[0]);
   },
 
   async updateProduction(id: number, input: UpdateProductionInput): Promise<ProductionRecord> {
@@ -228,11 +247,15 @@ export const factoryService = {
         throw new Error('Production record not found.');
       }
       const products = await catalogService.getProducts();
+      const quantities = await catalogService.getQuantities();
       const product = products.find((p) => p.id === input.productId);
+      const quantity = quantities.find((q) => q.id === input.quantityId);
       const updated: ProductionRecord = {
         ...existing,
         productId: input.productId,
         productName: product?.name ?? `Product ${input.productId}`,
+        quantityId: input.quantityId,
+        quantityValue: quantity?.value ?? `Quantity ${input.quantityId}`,
         quantityProduced: input.quantityProduced,
         productionDate: input.productionDate ?? existing.productionDate,
       };
@@ -242,6 +265,7 @@ export const factoryService = {
 
     const body: UpdateProductionRequestDto = {
       product_id: input.productId,
+      quantity_id: input.quantityId,
       quantity_produced: input.quantityProduced,
       production_date: input.productionDate,
     };
@@ -285,6 +309,7 @@ export const factoryService = {
       product_id: params.productId,
       product_name: params.productName,
       quantity: params.quantity,
+      depot_id: params.depotId,
     });
     const dtos = await apiRequest<SupplyHistoryDto[]>(`/factory/supplies${query}`);
     return pagedFromFactoryList(dtos.map(toSupplyRecord), { skip, limit });
@@ -310,8 +335,10 @@ export const factoryService = {
     if (apiConfig.useMockApi) {
       const products = await catalogService.getProducts();
       const quantities = await catalogService.getQuantities();
+      const depots = await catalogService.getDepots();
       const product = products.find((p) => p.id === input.productId);
       const quantity = quantities.find((q) => q.id === input.quantityId);
+      const depot = depots.find((d) => d.id === input.depotId);
       const record: SupplyRecord = {
         id: nextMockSupplyId++,
         productId: input.productId,
@@ -319,6 +346,10 @@ export const factoryService = {
         amount: input.amount,
         productName: product?.name ?? `Product ${input.productId}`,
         quantityValue: quantity?.value ?? `Quantity ${input.quantityId}`,
+        depotId: input.depotId,
+        depotName: depot?.name ?? `Depot ${input.depotId}`,
+        supplierId: input.supplierId,
+        supplierName: null,
         status: 'pending',
         rejectionReason: null,
         createdDate: new Date().toISOString(),
@@ -327,17 +358,22 @@ export const factoryService = {
       return simulateDelay(record);
     }
 
-    const body: CreateSupplyRequestDto = {
-      product_id: input.productId,
-      quantity_id: input.quantityId,
-      amount: input.amount,
-    };
+    // POST /factory/supplies takes an array too (same convention as production above).
+    const body: CreateSupplyRequestDto[] = [
+      {
+        product_id: input.productId,
+        quantity_id: input.quantityId,
+        amount: input.amount,
+        depot_id: input.depotId,
+        supplier_id: input.supplierId,
+      },
+    ];
     try {
-      const dto = await apiRequest<SupplyHistoryDto>('/factory/supplies', {
+      const dtos = await apiRequest<SupplyHistoryDto[]>('/factory/supplies', {
         method: 'POST',
         body: JSON.stringify(body),
       });
-      return toSupplyRecord(dto);
+      return toSupplyRecord(dtos[0]);
     } catch (err) {
       if (isConflict(err)) {
         throw new InsufficientFactoryStockError();

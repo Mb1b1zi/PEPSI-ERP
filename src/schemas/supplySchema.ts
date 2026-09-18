@@ -4,6 +4,7 @@ export const supplyCreateSchema = z.object({
   productId: z.coerce.number().int('Must be a whole number').positive('Must be a positive number'),
   quantityId: z.coerce.number().int('Must be a whole number').positive('Must be a positive number'),
   amount: z.coerce.number().int('Must be a whole number').positive('Must be a positive number'),
+  depotId: z.coerce.number().int('Must be a whole number').positive('Select a depot'),
 });
 
 export const supplyDecideSchema = z
