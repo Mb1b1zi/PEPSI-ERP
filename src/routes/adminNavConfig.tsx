@@ -7,7 +7,10 @@ export const adminNavConfig: NavItem[] = [
     label: 'Dashboard',
     path: ADMIN_PATHS.dashboard,
     icon: <LayoutDashboard size={18} />,
-    requiredPermission: 'admin.personnel:read',
+    // Gated on management (write) permissions specifically, not just admin.personnel:read —
+    // the Boss/CEO also has read access into personnel (to see who works where) and must not
+    // see the Admin Dashboard because of that alone. See isAdminTier in lib/navSections.ts.
+    requiredPermission: ['admin.personnel:create', 'admin.personnel:update', 'admin.personnel:delete'],
   },
   {
     label: 'Roles & Permissions',
