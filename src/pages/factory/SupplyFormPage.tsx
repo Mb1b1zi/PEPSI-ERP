@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   supplyCreateSchema,
   supplyDecideSchema,
@@ -211,20 +211,36 @@ function DecideSupplyForm({ record }: { record: SupplyRecord }) {
 export function SupplyFormPage() {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const existingRecord = location.state as SupplyRecord | null;
+  const [record, setRecord] = useState<SupplyRecord | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  if (isEditMode && !existingRecord) {
+  // Fetches by id (GET /factory/supplies/{id}) rather than relying on state passed from the
+  // list page, so a direct URL/refresh still loads the record correctly.
+  useEffect(() => {
+    if (id) {
+      factoryService
+        .getSupplyById(Number(id))
+        .then(setRecord)
+        .catch((err) => setLoadError(getApiErrorMessage(err, 'Failed to load supply record.')));
+    }
+  }, [id]);
+
+  if (isEditMode && loadError) {
     return (
       <div className="p-6 max-w-2xl">
         <h1 className="text-2xl font-semibold text-gray-900">Decide Supply Record</h1>
-        <div className="mt-6 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md px-4 py-3">
-          This record wasn't passed from the list page. Open it from{' '}
-          <button onClick={() => navigate(FACTORY_PATHS.supplies.list)} className="underline font-medium">
-            Supply History
-          </button>{' '}
-          to decide it.
+        <div className="mt-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">{loadError}</div>
+      </div>
+    );
+  }
+
+  if (isEditMode && !record) {
+    return (
+      <div className="p-6 max-w-2xl">
+        <h1 className="text-2xl font-semibold text-gray-900">Decide Supply Record</h1>
+        <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6 space-y-3">
+          <div className="h-10 bg-gray-100 rounded animate-pulse" />
+          <div className="h-10 bg-gray-100 rounded animate-pulse" />
         </div>
       </div>
     );
@@ -239,7 +255,7 @@ export function SupplyFormPage() {
           : 'Dispatch a supply from factory stock and decrease available quantity.'}
       </p>
 
-      {isEditMode && existingRecord ? <DecideSupplyForm record={existingRecord} /> : <CreateSupplyForm />}
+      {isEditMode && record ? <DecideSupplyForm record={record} /> : <CreateSupplyForm />}
     </div>
   );
 }

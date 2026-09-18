@@ -1,19 +1,19 @@
 /**
- * Factory Module (docs/api/factory.md). Endpoints implemented here:
+ * Factory Module (docs/api/factory.md). Every endpoint in this module is implemented here —
+ * this is "the Factory Manager's own module" (all four actions on both factory.production and
+ * factory.supplies are granted to that role):
  *   POST   /factory/production
  *   GET    /factory/production
+ *   GET    /factory/production/{production_id}   -- see getProductionById
  *   PUT    /factory/production/{production_id}
  *   DELETE /factory/production/{production_id}
  *   POST   /factory/supplies
  *   GET    /factory/supplies
- *   GET    /factory/supplies/{supply_id}    -- see getSupplyById
+ *   GET    /factory/supplies/{supply_id}          -- see getSupplyById
  *   PUT    /factory/supplies/{supply_id}
  *   DELETE /factory/supplies/{supply_id}
  *   GET    /factory/stock
  *   GET    /factory/stock/{product_id}/{quantity_id}
- *
- * GET /factory/production/{product_id} (per-product production history) is documented but not
- * needed by the current UI, so it isn't implemented.
  *
  * Note: factory.md (predates openapi.json, may have drifted — see docs/api/README.md) documents
  * the stock-by-id route as GET /factory/stock/{product_id} (one path param). The live spec's
@@ -198,6 +198,19 @@ export const factoryService = {
     });
     const dtos = await apiRequest<ProductionRecordDto[]>(`/factory/production${query}`);
     return pagedFromFactoryList(dtos.map(toProductionRecord), { skip, limit });
+  },
+
+  /** GET /factory/production/{production_id} — a single production record by its own id. Used
+   *  by ProductionFormPage's edit mode so a direct URL/refresh still loads the record, instead
+   *  of depending on state passed from the list page. */
+  async getProductionById(id: number): Promise<ProductionRecord> {
+    if (apiConfig.useMockApi) {
+      const record = mockStore.find((r) => r.id === id);
+      if (!record) throw new Error('Production record not found.');
+      return simulateDelay(record);
+    }
+    const dto = await apiRequest<ProductionRecordDto>(`/factory/production/${id}`);
+    return toProductionRecord(dto);
   },
 
   async createProduction(input: CreateProductionInput): Promise<ProductionRecord> {

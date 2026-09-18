@@ -81,7 +81,7 @@ export function SuppliesPage() {
         <div className="flex items-center gap-3 text-gray-400">
           <button
             title="Edit"
-            onClick={() => navigate(`${FACTORY_PATHS.supplies.list}/${s.id}/edit`, { state: s })}
+            onClick={() => navigate(`${FACTORY_PATHS.supplies.list}/${s.id}/edit`)}
             className="hover:text-brand transition-colors"
           >
             <Pencil size={16} />
