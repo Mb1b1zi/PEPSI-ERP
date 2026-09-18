@@ -8,6 +8,7 @@ import { useRoles } from '@/hooks/useRoles';
 import { userService } from '@/services/userService';
 import { roleService } from '@/services/roleService';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/hooks/useAuth';
 import { roleSchema, type RoleValues } from '@/schemas/roleSchema';
 import { Table, type Column } from '@/components/tables/Table';
 import { Pagination } from '@/components/tables/Pagination';
@@ -26,6 +27,8 @@ export function RolesPage() {
   const { items, page, totalPages, total, isLoading, error, setPage, refetch } = useUsers();
   const { roles, isLoading: isRolesLoading, refetch: refetchRoles } = useRoles();
   const toast = useToast();
+  const { hasPermission } = useAuth();
+  const canManagePermissions = hasPermission('auth.permissions:read');
   const [savingId, setSavingId] = useState<number | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [isDeletingRole, setIsDeletingRole] = useState(false);
@@ -136,13 +139,15 @@ export function RolesPage() {
             {roles.map((r) => (
               <span key={r.id} className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 text-sm rounded-full px-3 py-1">
                 {r.name}
-                <Link
-                  to={`${ADMIN_PATHS.roles}/${r.id}/permissions`}
-                  title="Manage permissions"
-                  className="text-gray-400 hover:text-brand"
-                >
-                  <ShieldCheck size={12} />
-                </Link>
+                {canManagePermissions && (
+                  <Link
+                    to={`${ADMIN_PATHS.roles}/${r.id}/permissions`}
+                    title="Manage permissions"
+                    className="text-gray-400 hover:text-brand"
+                  >
+                    <ShieldCheck size={12} />
+                  </Link>
+                )}
                 <button title="Delete role" onClick={() => setRoleToDelete(r)} className="text-gray-400 hover:text-red-600">
                   <Trash2 size={12} />
                 </button>

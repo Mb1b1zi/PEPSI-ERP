@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useRoles } from '@/hooks/useRoles';
+import { useToast } from '@/hooks/useToast';
+import { getApiErrorMessage } from '@/lib/apiClient';
 import { Table, type Column } from '@/components/tables/Table';
 import { ADMIN_PATHS } from '@/routes/paths';
 import type { PermissionAction, PermissionEntry } from '@/types/auth';
@@ -20,8 +22,19 @@ export function RolePermissionsPage() {
   const id = Number(roleId);
   const { roles } = useRoles();
   const { allPermissions, grantedIds, isLoading, error, togglingId, toggle } = useRolePermissions(id);
+  const toast = useToast();
 
   const role = roles.find((r) => r.id === id);
+
+  async function handleToggle(permission: PermissionEntry) {
+    const wasGranted = grantedIds.has(permission.id);
+    try {
+      await toggle(permission);
+      toast.success(wasGranted ? 'Permission revoked.' : 'Permission granted.');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to update permission.'));
+    }
+  }
 
   const moduleRows = useMemo(() => {
     const map = new Map<string, ModuleRow>();
@@ -51,7 +64,7 @@ export function RolePermissionsPage() {
             type="checkbox"
             checked={isGranted}
             disabled={isToggling}
-            onChange={() => toggle(permission)}
+            onChange={() => handleToggle(permission)}
             className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand/30 disabled:opacity-50"
           />
         );
