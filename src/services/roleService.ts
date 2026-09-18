@@ -41,15 +41,17 @@ export const roleService = {
     return response.items.map(toRole);
   },
 
+  /** POST /admin/roles takes an array (RoleCreate[] in, RoleRead[] out) — same batch-creation
+   *  convention as every other Admin resource (Depots/Products/Quantities/Prices/Personnel). */
   async createRole(input: CreateRoleInput): Promise<Role> {
     if (apiConfig.useMockApi) {
       const newRole: Role = { id: nextMockId++, name: input.name };
       mockStore = [...mockStore, newRole];
       return simulateDelay(newRole);
     }
-    const body: CreateRoleRequestDto = { name: input.name };
-    const dto = await apiRequest<RoleDto>('/admin/roles', { method: 'POST', body: JSON.stringify(body) });
-    return toRole(dto);
+    const body: CreateRoleRequestDto[] = [{ name: input.name }];
+    const dtos = await apiRequest<RoleDto[]>('/admin/roles', { method: 'POST', body: JSON.stringify(body) });
+    return toRole(dtos[0]);
   },
 
   async updateRole(id: number, input: UpdateRoleInput): Promise<Role | undefined> {
