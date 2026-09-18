@@ -21,6 +21,10 @@ export const ADMIN_PATHS = {
     list: '/admin/quantities',
     add: '/admin/quantities/add',
   },
+  prices: {
+    list: '/admin/prices',
+    add: '/admin/prices/add',
+  },
   factory: {
     production: {
       list: '/admin/factory/production',

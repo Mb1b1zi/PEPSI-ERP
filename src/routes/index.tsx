@@ -15,6 +15,8 @@ import { ProductsPage } from '@/pages/admin/products/ProductsPage';
 import { ProductFormPage } from '@/pages/admin/products/ProductFormPage';
 import { QuantitiesPage } from '@/pages/admin/quantities/QuantitiesPage';
 import { QuantityFormPage } from '@/pages/admin/quantities/QuantityFormPage';
+import { PricesPage } from '@/pages/admin/prices/PricesPage';
+import { PriceFormPage } from '@/pages/admin/prices/PriceFormPage';
 import { ProductionPage } from '@/pages/factory/ProductionPage';
 import { ProductionFormPage } from '@/pages/factory/ProductionFormPage';
 import { SuppliesPage } from '@/pages/factory/SuppliesPage';
@@ -58,6 +60,9 @@ export const router = createBrowserRouter([
           { path: ADMIN_PATHS.products.add, element: <ProductFormPage /> },
           { path: ADMIN_PATHS.quantities.list, element: <QuantitiesPage /> },
           { path: ADMIN_PATHS.quantities.add, element: <QuantityFormPage /> },
+          { path: ADMIN_PATHS.prices.list, element: <PricesPage /> },
+          { path: ADMIN_PATHS.prices.add, element: <PriceFormPage /> },
+          { path: '/admin/prices/:quantityId/edit', element: <PriceFormPage /> },
           { path: FACTORY_PATHS.dashboard, element: <FactoryDashboardPage /> },
           { path: FACTORY_PATHS.production.list, element: <ProductionPage /> },
           { path: FACTORY_PATHS.production.add, element: <ProductionFormPage /> },
