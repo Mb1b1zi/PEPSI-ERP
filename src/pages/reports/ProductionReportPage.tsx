@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Boxes, CheckCircle2, XCircle } from 'lucide-react';
-import { useStockReport } from '@/hooks/useStockReport';
-import { useCatalog } from '@/hooks/useCatalog';
+import { Boxes, ClipboardList } from 'lucide-react';
+import { useProductionReport } from '@/hooks/useProductionReport';
 import { getPeriodRange, type ReportPeriod } from '@/lib/reportPeriods';
 import { StatCard } from '@/components/cards/StatCard';
 import { Table, type Column } from '@/components/tables/Table';
-import type { DepotStockBreakdown } from '@/hooks/useStockReport';
+import type { ProductProductionBreakdown } from '@/hooks/useProductionReport';
 
 const inputClasses =
   'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
@@ -17,19 +16,16 @@ const PERIOD_OPTIONS: { value: ReportPeriod; label: string }[] = [
   { value: 'custom', label: 'Custom Range' },
 ];
 
-const columns: Column<DepotStockBreakdown>[] = [
-  { header: 'Depot', render: (d) => <span className="font-medium text-gray-900">{d.depotName}</span> },
-  { header: 'Units Delivered', render: (d) => d.totalDelivered },
-  { header: 'Confirmed', render: (d) => d.confirmedCount },
-  { header: 'Rejected', render: (d) => d.rejectedCount },
+const columns: Column<ProductProductionBreakdown>[] = [
+  { header: 'Product', render: (p) => <span className="font-medium text-gray-900">{p.productName}</span> },
+  { header: 'Units Produced', render: (p) => p.totalProduced.toLocaleString() },
+  { header: 'Production Runs', render: (p) => p.recordCount },
 ];
 
-export function StockReportPage() {
+export function ProductionReportPage() {
   const [period, setPeriod] = useState<ReportPeriod>('today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [depotIdInput, setDepotIdInput] = useState('');
-  const { depots, isLoading: isCatalogLoading } = useCatalog();
 
   function handlePeriodClick(next: ReportPeriod) {
     if (next === 'custom' && (!customFrom || !customTo)) {
@@ -41,16 +37,12 @@ export function StockReportPage() {
   }
 
   const range = period === 'custom' ? { dateFrom: customFrom, dateTo: customTo } : getPeriodRange(period);
-  const depotId = depotIdInput === '' ? undefined : Number(depotIdInput);
-  const report = useStockReport({ dateFrom: range.dateFrom, dateTo: range.dateTo, depotId });
+  const report = useProductionReport({ dateFrom: range.dateFrom, dateTo: range.dateTo });
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Restock Report</h1>
-      <p className="text-gray-500 mt-1">
-        Stock received via restock deliveries, broken down by depot. For a live current-stock snapshot, see Depot
-        Stock instead.
-      </p>
+      <h1 className="text-2xl font-semibold text-gray-900">Production Report</h1>
+      <p className="text-gray-500 mt-1">Factory-wide output, broken down by product.</p>
 
       <div className="mt-6 flex items-end gap-3 flex-wrap">
         <div className="flex gap-2">
@@ -81,24 +73,14 @@ export function StockReportPage() {
             </div>
           </>
         )}
-
-        <div>
-          <label className="text-sm font-medium text-gray-700 block mb-1.5">Depot</label>
-          <select
-            value={depotIdInput}
-            onChange={(e) => setDepotIdInput(e.target.value)}
-            disabled={isCatalogLoading}
-            className={inputClasses}
-          >
-            <option value="">All depots</option>
-            {depots.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
+
+      {(period === 'week' || period === 'month' || period === 'custom') && (
+        <div className="mt-6 bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-md px-4 py-3">
+          Multi-day production reports load one request per day (the Factory API only accepts a single
+          exact date, not a range) — this may take a moment for longer ranges.
+        </div>
+      )}
 
       {report.error && (
         <div className="mt-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-4 py-3">
@@ -108,22 +90,21 @@ export function StockReportPage() {
 
       {report.isTruncated && !report.isLoading && (
         <div className="mt-6 bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-md px-4 py-3">
-          This range has more restock entries than could be fully summed — totals below reflect only a partial set.
-          Narrow the date range or depot filter for an exact total.
+          This range has more production records than could be fully summed — totals below reflect only a
+          partial set. Narrow the date range for an exact total.
         </div>
       )}
 
       {report.isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-          {Array.from({ length: 3 }).map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+          {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="h-[76px] bg-gray-100 rounded-lg animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-          <StatCard label="Units Delivered" value={report.totalDelivered} icon={<Boxes size={20} />} />
-          <StatCard label="Confirmed Deliveries" value={report.confirmedCount} icon={<CheckCircle2 size={20} />} />
-          <StatCard label="Rejected Deliveries" value={report.rejectedCount} icon={<XCircle size={20} />} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+          <StatCard label="Units Produced" value={report.totalProduced.toLocaleString()} icon={<Boxes size={20} />} />
+          <StatCard label="Production Runs" value={report.recordCount} icon={<ClipboardList size={20} />} />
         </div>
       )}
 
@@ -137,9 +118,9 @@ export function StockReportPage() {
         ) : (
           <Table
             columns={columns}
-            data={report.byDepot}
-            getRowKey={(d) => d.depotName}
-            emptyMessage="No restock activity in this range."
+            data={report.byProduct}
+            getRowKey={(p) => p.productName}
+            emptyMessage="No production recorded in this range."
           />
         )}
       </div>

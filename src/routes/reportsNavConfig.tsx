@@ -1,4 +1,4 @@
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, FileBarChart } from 'lucide-react';
 import { REPORTS_PATHS } from './paths';
 import type { NavItem } from '@/types/navigation';
 
@@ -19,8 +19,16 @@ export const reportsNavConfig: NavItem[] = [
           'depot.sales:read',
         ],
       },
+    ],
+  },
+  {
+    label: 'Generate Reports',
+    icon: <FileBarChart size={18} />,
+    children: [
       { label: 'Sales Report', path: REPORTS_PATHS.sales, requiredPermission: 'depot.sales:read' },
-      { label: 'Stock Report', path: REPORTS_PATHS.stock, requiredPermission: 'depot.restock:read' },
+      { label: 'Restock Report', path: REPORTS_PATHS.stock, requiredPermission: 'depot.restock:read' },
+      { label: 'Supply Report', path: REPORTS_PATHS.supply, requiredPermission: 'factory.supplies:read' },
+      { label: 'Production Report', path: REPORTS_PATHS.production, requiredPermission: 'factory.production:read' },
     ],
   },
 ];

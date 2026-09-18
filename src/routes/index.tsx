@@ -35,6 +35,8 @@ import { CurrentSalesPage } from '@/pages/depot/CurrentSalesPage';
 import { CompanyOverviewPage } from '@/pages/reports/CompanyOverviewPage';
 import { SalesReportPage } from '@/pages/reports/SalesReportPage';
 import { StockReportPage } from '@/pages/reports/StockReportPage';
+import { ProductionReportPage } from '@/pages/reports/ProductionReportPage';
+import { SupplyReportPage } from '@/pages/reports/SupplyReportPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ErrorPage } from '@/pages/ErrorPage';
 
@@ -87,6 +89,8 @@ export const router = createBrowserRouter([
           { path: REPORTS_PATHS.overview, element: <CompanyOverviewPage /> },
           { path: REPORTS_PATHS.sales, element: <SalesReportPage /> },
           { path: REPORTS_PATHS.stock, element: <StockReportPage /> },
+          { path: REPORTS_PATHS.production, element: <ProductionReportPage /> },
+          { path: REPORTS_PATHS.supply, element: <SupplyReportPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

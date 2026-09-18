@@ -89,4 +89,6 @@ export const REPORTS_PATHS = {
   overview: '/reports/overview',
   sales: '/reports/sales',
   stock: '/reports/stock',
+  production: '/reports/production',
+  supply: '/reports/supply',
 } as const;
