@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Trash2, ShieldCheck } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { useRoles } from '@/hooks/useRoles';
 import { userService } from '@/services/userService';
@@ -12,6 +13,7 @@ import { Table, type Column } from '@/components/tables/Table';
 import { Pagination } from '@/components/tables/Pagination';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { FormField } from '@/components/forms/FormField';
+import { ADMIN_PATHS } from '@/routes/paths';
 import type { User } from '@/types/user';
 import type { Role } from '@/types/role';
 
@@ -134,6 +136,13 @@ export function RolesPage() {
             {roles.map((r) => (
               <span key={r.id} className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 text-sm rounded-full px-3 py-1">
                 {r.name}
+                <Link
+                  to={`${ADMIN_PATHS.roles}/${r.id}/permissions`}
+                  title="Manage permissions"
+                  className="text-gray-400 hover:text-brand"
+                >
+                  <ShieldCheck size={12} />
+                </Link>
                 <button title="Delete role" onClick={() => setRoleToDelete(r)} className="text-gray-400 hover:text-red-600">
                   <Trash2 size={12} />
                 </button>

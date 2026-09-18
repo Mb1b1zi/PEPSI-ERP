@@ -25,6 +25,26 @@ export interface LoginResponseDto {
   user: AuthUserDto;
 }
 
+export type PermissionAction = 'create' | 'read' | 'update' | 'delete';
+
+/**
+ * Shape shared by GET /auth/permissions (every permission that exists) and
+ * GET /auth/roles/{role_id}/permissions (the subset granted to that role) — same schema,
+ * different set of rows. Carries module_key/module_name directly, so there's no need to also
+ * call GET /auth/modules just to group permissions by module in a UI.
+ */
+export interface PermissionEntryDto {
+  id: number;
+  module_id: number;
+  module_key: string;
+  module_name: string;
+  action: PermissionAction;
+}
+
+export interface GrantPermissionsRequestDto {
+  permission_ids: number[];
+}
+
 // ---------------------------------------------------------------------------
 // Domain types
 // ---------------------------------------------------------------------------
@@ -46,4 +66,12 @@ export interface AuthUser {
 export interface AuthSession {
   accessToken: string;
   user: AuthUser;
+}
+
+export interface PermissionEntry {
+  id: number;
+  moduleId: number;
+  moduleKey: string;
+  moduleName: string;
+  action: PermissionAction;
 }

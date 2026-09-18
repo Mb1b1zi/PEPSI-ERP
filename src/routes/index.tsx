@@ -9,6 +9,7 @@ import { UsersListPage } from '@/pages/admin/users/UsersListPage';
 import { UserFormPage } from '@/pages/admin/users/UserFormPage';
 import { UserViewPage } from '@/pages/admin/users/UserViewPage';
 import { RolesPage } from '@/pages/admin/roles/RolesPage';
+import { RolePermissionsPage } from '@/pages/admin/roles/RolePermissionsPage';
 import { DepotsPage } from '@/pages/admin/depots/DepotsPage';
 import { DepotFormPage } from '@/pages/admin/depots/DepotFormPage';
 import { ProductsPage } from '@/pages/admin/products/ProductsPage';
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
         children: [
           { path: ADMIN_PATHS.dashboard, element: <DashboardPage /> },
           { path: ADMIN_PATHS.roles, element: <RolesPage /> },
+          { path: '/admin/roles/:roleId/permissions', element: <RolePermissionsPage /> },
           { path: ADMIN_PATHS.users.list, element: <UsersListPage /> },
           { path: ADMIN_PATHS.users.add, element: <UserFormPage /> },
           { path: '/admin/users/:id', element: <UserViewPage /> },
