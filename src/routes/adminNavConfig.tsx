@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Warehouse, Package, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Warehouse, Package, ShieldCheck, Ruler } from 'lucide-react';
 import { ADMIN_PATHS } from './paths';
 import type { NavItem } from '@/types/navigation';
 
@@ -37,6 +37,14 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: 'All Products', path: ADMIN_PATHS.products.list, requiredPermission: 'admin.products:read' },
       { label: 'Add Product', path: ADMIN_PATHS.products.add, requiredPermission: 'admin.products:create' },
+    ],
+  },
+  {
+    label: 'Quantities',
+    icon: <Ruler size={18} />,
+    children: [
+      { label: 'All Quantities', path: ADMIN_PATHS.quantities.list, requiredPermission: 'admin.quantities:read' },
+      { label: 'Add Quantity', path: ADMIN_PATHS.quantities.add, requiredPermission: 'admin.quantities:create' },
     ],
   },
 ];
