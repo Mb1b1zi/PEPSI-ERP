@@ -1,12 +1,14 @@
 /**
  * Admin Quantities (pack-size/quantity catalog — "500ml", "Crate-24", etc.). Endpoints
  * implemented here:
- *   POST /admin/quantities
- *   GET  /admin/quantities
- *   GET  /admin/quantities/{quantity_id}
+ *   POST   /admin/quantities
+ *   GET    /admin/quantities
+ *   GET    /admin/quantities/{quantity_id}
+ *   PUT    /admin/quantities/{quantity_id}
+ *   DELETE /admin/quantities/{quantity_id}
  *
- * No update or delete endpoint exists on the real backend, same limitation as
- * productService.ts — only create + read, so no Edit/Delete UI on the Quantities page.
+ * Update/delete were added to the backend after this module was first built (confirmed against
+ * openapi.json, 2026-09-18 — originally there was only create + read, same as Products).
  *
  * POST takes an array (QuantityCreate[] in, QuantityRead[] out) — same batch-creation
  * convention as Depots/Products/Personnel/Roles/Auth Users. GET is paged, but this fetches one
@@ -18,7 +20,7 @@
  */
 import { apiRequest } from '@/lib/apiClient';
 import { apiConfig } from '@/lib/config';
-import type { Quantity, CreateQuantityInput, QuantityDto, QuantityCreateDto } from '@/types/catalog';
+import type { Quantity, CreateQuantityInput, UpdateQuantityInput, QuantityDto, QuantityCreateDto } from '@/types/catalog';
 import { mockQuantities } from '@/mock/catalog.mock';
 
 function simulateDelay<T>(data: T, ms = 400): Promise<T> {
@@ -70,5 +72,26 @@ export const quantityService = {
       body: JSON.stringify(body),
     });
     return toQuantity(dtos[0]);
+  },
+
+  async updateQuantity(id: number, input: UpdateQuantityInput): Promise<Quantity | undefined> {
+    if (apiConfig.useMockApi) {
+      quantitiesStore = quantitiesStore.map((q) => (q.id === id ? { ...q, value: input.value } : q));
+      return simulateDelay(quantitiesStore.find((q) => q.id === id));
+    }
+    const body: QuantityCreateDto = { quantity: input.value };
+    const dto = await apiRequest<QuantityDto>(`/admin/quantities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    return toQuantity(dto);
+  },
+
+  async deleteQuantity(id: number): Promise<void> {
+    if (apiConfig.useMockApi) {
+      quantitiesStore = quantitiesStore.filter((q) => q.id !== id);
+      return simulateDelay(undefined);
+    }
+    return apiRequest<void>(`/admin/quantities/${id}`, { method: 'DELETE' });
   },
 };

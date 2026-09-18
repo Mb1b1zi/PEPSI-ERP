@@ -1,12 +1,13 @@
 /**
  * Admin Products (product catalog). Endpoints implemented here:
- *   POST /admin/products
- *   GET  /admin/products
- *   GET  /admin/products/{product_id}
+ *   POST   /admin/products
+ *   GET    /admin/products
+ *   GET    /admin/products/{product_id}
+ *   PUT    /admin/products/{product_id}
+ *   DELETE /admin/products/{product_id}
  *
- * No update or delete endpoint exists for products on the real backend (confirmed against
- * openapi.json and a live call, 2026-09-17) — so unlike depotLocationService.ts, there's no
- * updateProduct/deleteProduct here, and no Edit/Delete UI on the Products page either.
+ * Update/delete were added to the backend after this module was first built (confirmed against
+ * openapi.json, 2026-09-18 — originally there was only create + read).
  *
  * POST takes an array (ProductCreate[] in, ProductRead[] out) — same batch-creation convention
  * as Depots/Personnel/Roles/Auth Users. GET is paged, but this fetches one large page
@@ -18,7 +19,7 @@
  */
 import { apiRequest } from '@/lib/apiClient';
 import { apiConfig } from '@/lib/config';
-import type { Product, CreateProductInput, ProductDto, ProductCreateDto } from '@/types/catalog';
+import type { Product, CreateProductInput, UpdateProductInput, ProductDto, ProductCreateDto } from '@/types/catalog';
 import { mockProducts } from '@/mock/catalog.mock';
 
 function simulateDelay<T>(data: T, ms = 400): Promise<T> {
@@ -70,5 +71,26 @@ export const productService = {
       body: JSON.stringify(body),
     });
     return toProduct(dtos[0]);
+  },
+
+  async updateProduct(id: number, input: UpdateProductInput): Promise<Product | undefined> {
+    if (apiConfig.useMockApi) {
+      productsStore = productsStore.map((p) => (p.id === id ? { ...p, name: input.name } : p));
+      return simulateDelay(productsStore.find((p) => p.id === id));
+    }
+    const body: ProductCreateDto = { name: input.name };
+    const dto = await apiRequest<ProductDto>(`/admin/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    return toProduct(dto);
+  },
+
+  async deleteProduct(id: number): Promise<void> {
+    if (apiConfig.useMockApi) {
+      productsStore = productsStore.filter((p) => p.id !== id);
+      return simulateDelay(undefined);
+    }
+    return apiRequest<void>(`/admin/products/${id}`, { method: 'DELETE' });
   },
 };

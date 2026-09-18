@@ -1,18 +1,56 @@
-import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useQuantities } from '@/hooks/useQuantities';
+import { quantityService } from '@/services/quantityService';
+import { useToast } from '@/hooks/useToast';
 import { Table, type Column } from '@/components/tables/Table';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { ADMIN_PATHS } from '@/routes/paths';
 import type { Quantity } from '@/types/catalog';
 
-/** No Actions column — the real backend has no update/delete endpoint for quantities, only
- *  create + read (see quantityService.ts). */
-const columns: Column<Quantity>[] = [
-  { header: 'Value', render: (q) => <span className="font-medium text-gray-900">{q.value}</span> },
-];
-
 export function QuantitiesPage() {
-  const { quantities, isLoading, error } = useQuantities();
+  const { quantities, isLoading, error, refetch } = useQuantities();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [quantityToDelete, setQuantityToDelete] = useState<Quantity | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  async function handleConfirmDelete() {
+    if (!quantityToDelete) return;
+    setIsDeleting(true);
+    try {
+      await quantityService.deleteQuantity(quantityToDelete.id);
+      toast.success('Quantity deleted.');
+      await refetch();
+      setQuantityToDelete(null);
+    } catch {
+      toast.error('Failed to delete quantity.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  const columns: Column<Quantity>[] = [
+    { header: 'Value', render: (q) => <span className="font-medium text-gray-900">{q.value}</span> },
+    {
+      header: 'Actions',
+      render: (q) => (
+        <div className="flex items-center gap-3 text-gray-400">
+          <button
+            title="Edit"
+            onClick={() => navigate(`${ADMIN_PATHS.quantities.list}/${q.id}/edit`)}
+            className="hover:text-brand transition-colors"
+          >
+            <Pencil size={16} />
+          </button>
+          <button title="Delete" onClick={() => setQuantityToDelete(q)} className="hover:text-red-600 transition-colors">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -44,6 +82,16 @@ export function QuantitiesPage() {
           <Table columns={columns} data={quantities} getRowKey={(q) => String(q.id)} />
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={quantityToDelete !== null}
+        title="Delete quantity?"
+        message={`Are you sure you want to delete "${quantityToDelete?.value}"? This cannot be undone.`}
+        confirmLabel={isDeleting ? 'Deleting...' : 'Delete'}
+        isDestructive
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setQuantityToDelete(null)}
+      />
     </div>
   );
 }

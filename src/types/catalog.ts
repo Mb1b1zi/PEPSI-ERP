@@ -14,7 +14,8 @@ export interface DepotDto {
   location: string;
 }
 
-/** No update/delete endpoint exists for products on the real backend — only create + read. */
+/** PUT /admin/products/{id} reuses this same shape (confirmed against openapi.json,
+ *  2026-09-18) — update/delete were added to the backend after this module was first built. */
 export interface ProductCreateDto {
   name: string;
 }
@@ -25,8 +26,9 @@ export interface ProductDto {
 }
 
 /** Backend field is `quantity` (e.g. "500ml", "Crate-24"), not `value` — mapped to the domain
- *  Quantity type's `value` field in quantityService.ts. No update/delete endpoint, same as
- *  Products — only create + read. */
+ *  Quantity type's `value` field in quantityService.ts. PUT /admin/quantities/{id} reuses this
+ *  same shape (confirmed against openapi.json, 2026-09-18) — update/delete were added to the
+ *  backend after this module was first built. */
 export interface QuantityCreateDto {
   quantity: string;
 }
@@ -60,9 +62,13 @@ export interface CreateProductInput {
   name: string;
 }
 
+export type UpdateProductInput = CreateProductInput;
+
 export interface CreateQuantityInput {
   value: string;
 }
+
+export type UpdateQuantityInput = CreateQuantityInput;
 
 export interface CreateDepotInput {
   name: string;
