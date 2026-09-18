@@ -7,19 +7,22 @@ import type { DepotPagedResponse } from '@/types/api';
 
 export type RestockStatus = 'confirmed' | 'rejected';
 
+/**
+ * depot_id and supplier_id are NOT fields on this request (confirmed against openapi.json and a
+ * live call, 2026-09-18 — sending them is silently ignored, even an invalid depot_id). Both are
+ * derived server-side from the supply_history_id's own Factory dispatch record, which already
+ * carries depot_id/supplier_id since docs/api/README.md #4 was resolved. depot.md's worked
+ * example (which showed depot_id/supplier_id in the body) predates that and is stale here.
+ */
 export interface ConfirmRestockRequestDto {
-  depot_id: number;
   quantity_received: number;
-  supplier_id?: number;
   confirmed_by_id?: number;
 }
 
 export interface RejectRestockRequestDto {
-  depot_id: number;
   reason: string;
   confirmed_by_id?: number;
   quantity_received?: number;
-  supplier_id?: number;
 }
 
 export interface UpdateRestockRequestDto {

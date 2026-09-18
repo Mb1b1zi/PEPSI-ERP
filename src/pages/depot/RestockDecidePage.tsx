@@ -10,7 +10,6 @@ import {
 } from '@/schemas/restockSchema';
 import { depotService } from '@/services/depotService';
 import { getApiErrorMessage } from '@/lib/apiClient';
-import { useCatalog } from '@/hooks/useCatalog';
 import { useToast } from '@/hooks/useToast';
 import { FormField } from '@/components/forms/FormField';
 import { Badge } from '@/components/badges/Badge';
@@ -19,7 +18,6 @@ import type { RestockEntry } from '@/types/restock';
 
 const inputClasses =
   'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
-const selectClasses = inputClasses;
 
 type Action = 'confirm' | 'reject';
 
@@ -36,7 +34,6 @@ function ResultBanner({ result }: { result: RestockEntry }) {
 function ConfirmForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
-  const { depots, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
   const {
     register,
     handleSubmit,
@@ -49,9 +46,7 @@ function ConfirmForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
     setIsSubmitting(true);
     try {
       const result = await depotService.confirmRestock(values.supplyHistoryId, {
-        depotId: values.depotId,
         quantityReceived: values.quantityReceived,
-        supplierId: values.supplierId,
         confirmedById: values.confirmedById,
       });
       toast.success(`Delivery ${result.status}.`);
@@ -69,29 +64,8 @@ function ConfirmForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
       <FormField label="Supply History ID" error={errors.supplyHistoryId?.message} required>
         <input {...register('supplyHistoryId')} type="number" min={1} className={inputClasses} placeholder="e.g. 20" />
       </FormField>
-      <FormField label="Depot" error={errors.depotId?.message} required>
-        {isCatalogLoading ? (
-          <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
-        ) : catalogError ? (
-          <p className="text-sm text-red-600">Failed to load depots: {catalogError}</p>
-        ) : (
-          <select {...register('depotId')} className={selectClasses} defaultValue="">
-            <option value="" disabled>
-              Select a depot…
-            </option>
-            {depots.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </FormField>
       <FormField label="Quantity Received" error={errors.quantityReceived?.message} required>
         <input {...register('quantityReceived')} type="number" min={1} className={inputClasses} placeholder="e.g. 60" />
-      </FormField>
-      <FormField label="Supplier ID (optional)" error={errors.supplierId?.message}>
-        <input {...register('supplierId')} type="number" min={1} className={inputClasses} placeholder="e.g. 8" />
       </FormField>
       <FormField label="Confirmed By ID (optional)" error={errors.confirmedById?.message}>
         <input {...register('confirmedById')} type="number" min={1} className={inputClasses} placeholder="e.g. 8" />
@@ -111,7 +85,6 @@ function ConfirmForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
 function RejectForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
-  const { depots, isLoading: isCatalogLoading, error: catalogError } = useCatalog();
   const {
     register,
     handleSubmit,
@@ -124,11 +97,9 @@ function RejectForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
     setIsSubmitting(true);
     try {
       const result = await depotService.rejectRestock(values.supplyHistoryId, {
-        depotId: values.depotId,
         reason: values.reason,
         confirmedById: values.confirmedById,
         quantityReceived: values.quantityReceived,
-        supplierId: values.supplierId,
       });
       toast.success('Delivery rejected.');
       onResult(result);
@@ -145,32 +116,11 @@ function RejectForm({ onResult }: { onResult: (r: RestockEntry) => void }) {
       <FormField label="Supply History ID" error={errors.supplyHistoryId?.message} required>
         <input {...register('supplyHistoryId')} type="number" min={1} className={inputClasses} placeholder="e.g. 20" />
       </FormField>
-      <FormField label="Depot" error={errors.depotId?.message} required>
-        {isCatalogLoading ? (
-          <div className="h-[38px] bg-gray-100 rounded-md animate-pulse" />
-        ) : catalogError ? (
-          <p className="text-sm text-red-600">Failed to load depots: {catalogError}</p>
-        ) : (
-          <select {...register('depotId')} className={selectClasses} defaultValue="">
-            <option value="" disabled>
-              Select a depot…
-            </option>
-            {depots.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </FormField>
       <FormField label="Reason" error={errors.reason?.message} required>
         <input {...register('reason')} className={inputClasses} placeholder="e.g. Truck broke down, crates never arrived" />
       </FormField>
       <FormField label="Quantity Received (optional)" error={errors.quantityReceived?.message}>
         <input {...register('quantityReceived')} type="number" min={1} className={inputClasses} />
-      </FormField>
-      <FormField label="Supplier ID (optional)" error={errors.supplierId?.message}>
-        <input {...register('supplierId')} type="number" min={1} className={inputClasses} />
       </FormField>
       <FormField label="Confirmed By ID (optional)" error={errors.confirmedById?.message}>
         <input {...register('confirmedById')} type="number" min={1} className={inputClasses} />

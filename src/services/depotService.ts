@@ -230,19 +230,22 @@ export const depotService = {
    */
   async confirmRestock(supplyHistoryId: number, input: ConfirmRestockInput): Promise<RestockEntry> {
     if (apiConfig.useMockApi) {
+      // Mock mode has no supply_history data to derive a real depot/supplier from (unlike the
+      // real backend, which reads them off the dispatch record) — falls back to the first
+      // catalog depot as a placeholder, since this path isn't exercising real linkage anyway.
       const depots = await catalogService.getDepots();
-      const depot = depots.find((d) => d.id === input.depotId);
+      const depot = depots[0];
       const entry: RestockEntry = {
         id: nextMockRestockId++,
         supplyHistoryId,
-        depotId: input.depotId,
-        depotName: depot?.name ?? `Depot ${input.depotId}`,
+        depotId: depot?.id ?? 0,
+        depotName: depot?.name ?? 'Unknown depot',
         productId: 0,
         productName: 'Unknown product',
         quantityId: 0,
         quantityValue: '',
         quantityDelivered: input.quantityReceived,
-        supplierId: input.supplierId ?? null,
+        supplierId: null,
         confirmedById: input.confirmedById ?? null,
         status: 'confirmed',
         rejectionReason: null,
@@ -252,10 +255,10 @@ export const depotService = {
       return simulateDelay(entry);
     }
 
+    // depot_id/supplier_id are NOT part of this request — see the comment on
+    // ConfirmRestockRequestDto in types/depot.ts for why.
     const body: ConfirmRestockRequestDto = {
-      depot_id: input.depotId,
       quantity_received: input.quantityReceived,
-      supplier_id: input.supplierId,
       confirmed_by_id: input.confirmedById,
     };
     const dto = await apiRequest<RestockEntryDto>(`/depot/restock/${supplyHistoryId}/confirm`, {
@@ -268,18 +271,18 @@ export const depotService = {
   async rejectRestock(supplyHistoryId: number, input: RejectRestockInput): Promise<RestockEntry> {
     if (apiConfig.useMockApi) {
       const depots = await catalogService.getDepots();
-      const depot = depots.find((d) => d.id === input.depotId);
+      const depot = depots[0];
       const entry: RestockEntry = {
         id: nextMockRestockId++,
         supplyHistoryId,
-        depotId: input.depotId,
-        depotName: depot?.name ?? `Depot ${input.depotId}`,
+        depotId: depot?.id ?? 0,
+        depotName: depot?.name ?? 'Unknown depot',
         productId: 0,
         productName: 'Unknown product',
         quantityId: 0,
         quantityValue: '',
         quantityDelivered: input.quantityReceived ?? 0,
-        supplierId: input.supplierId ?? null,
+        supplierId: null,
         confirmedById: input.confirmedById ?? null,
         status: 'rejected',
         rejectionReason: input.reason,
@@ -290,11 +293,9 @@ export const depotService = {
     }
 
     const body: RejectRestockRequestDto = {
-      depot_id: input.depotId,
       reason: input.reason,
       confirmed_by_id: input.confirmedById,
       quantity_received: input.quantityReceived,
-      supplier_id: input.supplierId,
     };
     const dto = await apiRequest<RestockEntryDto>(`/depot/restock/${supplyHistoryId}/reject`, {
       method: 'POST',

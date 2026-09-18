@@ -11,19 +11,15 @@ const optionalPositiveInt = () =>
 
 export const confirmRestockSchema = z.object({
   supplyHistoryId: positiveInt(),
-  depotId: positiveInt(),
   quantityReceived: positiveInt(),
-  supplierId: optionalPositiveInt(),
   confirmedById: optionalPositiveInt(),
 });
 
 export const rejectRestockSchema = z.object({
   supplyHistoryId: positiveInt(),
-  depotId: positiveInt(),
   reason: z.string().min(3, 'Reason must be at least 3 characters'),
   confirmedById: optionalPositiveInt(),
   quantityReceived: optionalPositiveInt(),
-  supplierId: optionalPositiveInt(),
 });
 
 export const updateRestockSchema = z.object({

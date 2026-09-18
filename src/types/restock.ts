@@ -18,18 +18,14 @@ export interface RestockEntry {
 }
 
 export interface ConfirmRestockInput {
-  depotId: number;
   quantityReceived: number;
-  supplierId?: number;
   confirmedById?: number;
 }
 
 export interface RejectRestockInput {
-  depotId: number;
   reason: string;
   confirmedById?: number;
   quantityReceived?: number;
-  supplierId?: number;
 }
 
 export interface UpdateRestockInput {
