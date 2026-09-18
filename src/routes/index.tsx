@@ -33,6 +33,7 @@ import { SalesListPage } from '@/pages/depot/SalesListPage';
 import { SaleFormPage } from '@/pages/depot/SaleFormPage';
 import { CurrentSalesPage } from '@/pages/depot/CurrentSalesPage';
 import { CompanyOverviewPage } from '@/pages/reports/CompanyOverviewPage';
+import { WorkersPage } from '@/pages/reports/WorkersPage';
 import { SalesReportPage } from '@/pages/reports/SalesReportPage';
 import { StockReportPage } from '@/pages/reports/StockReportPage';
 import { ProductionReportPage } from '@/pages/reports/ProductionReportPage';
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
           { path: '/depot/sales/:id/edit', element: <SaleFormPage /> },
           { path: DEPOT_PATHS.currentSales, element: <CurrentSalesPage /> },
           { path: REPORTS_PATHS.overview, element: <CompanyOverviewPage /> },
+          { path: REPORTS_PATHS.workers, element: <WorkersPage /> },
           { path: REPORTS_PATHS.sales, element: <SalesReportPage /> },
           { path: REPORTS_PATHS.stock, element: <StockReportPage /> },
           { path: REPORTS_PATHS.production, element: <ProductionReportPage /> },

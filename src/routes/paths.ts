@@ -87,6 +87,7 @@ export const DEPOT_PATHS = {
  *  together) — not owned by any single module, so kept separate from ADMIN/FACTORY/DEPOT_PATHS. */
 export const REPORTS_PATHS = {
   overview: '/reports/overview',
+  workers: '/reports/workers',
   sales: '/reports/sales',
   stock: '/reports/stock',
   production: '/reports/production',

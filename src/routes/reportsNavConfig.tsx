@@ -19,6 +19,7 @@ export const reportsNavConfig: NavItem[] = [
           'depot.sales:read',
         ],
       },
+      { label: 'Workers by Depot', path: REPORTS_PATHS.workers, requiredPermission: 'admin.personnel:read' },
     ],
   },
   {
